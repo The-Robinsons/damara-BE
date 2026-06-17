@@ -1,0 +1,257 @@
+<svg width="1600" height="1180" viewBox="0 0 1600 1180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#17365D"/>
+    </marker>
+    <style>
+      .title{font:700 34px Arial,sans-serif;fill:#0B1F3A}
+      .subtitle{font:500 15px Arial,sans-serif;fill:#526783}
+      .box{fill:#F8FBFF;stroke:#17365D;stroke-width:2;rx:14}
+      .head{fill:#17365D}
+      .headText{font:700 18px Arial,sans-serif;fill:#FFFFFF}
+      .field{font:500 13px Arial,sans-serif;fill:#183B63}
+      .key{font:700 13px Arial,sans-serif;fill:#0B1F3A}
+      .rel{stroke:#17365D;stroke-width:2;fill:none;marker-end:url(#arrow)}
+      .relText{font:700 12px Arial,sans-serif;fill:#17365D}
+      .note{font:500 13px Arial,sans-serif;fill:#284B74}
+      .pill{fill:#E8F0FA;stroke:#8CA7C5;stroke-width:1;rx:8}
+    </style>
+  </defs>
+
+  <rect width="1600" height="1180" fill="#FFFFFF"/>
+  <text x="70" y="58" class="title">DAMARA ERD</text>
+  <text x="70" y="86" class="subtitle">Campus group-buying backend database map · navy Figma SVG</text>
+
+  <!-- users -->
+  <g transform="translate(70 130)">
+    <rect class="box" width="270" height="244"/>
+    <rect class="head" width="270" height="46" rx="14"/>
+    <text x="18" y="30" class="headText">users</text>
+    <text x="18" y="70" class="key">PK id</text>
+    <text x="18" y="92" class="key">UK email</text>
+    <text x="18" y="114" class="key">UK student_id</text>
+    <text x="18" y="136" class="field">password_hash</text>
+    <text x="18" y="158" class="field">nickname, department</text>
+    <text x="18" y="180" class="field">avatar_url</text>
+    <text x="18" y="202" class="field">trust_score</text>
+    <text x="18" y="224" class="field">created_at, updated_at</text>
+  </g>
+
+  <!-- posts -->
+  <g transform="translate(430 110)">
+    <rect class="box" width="330" height="360"/>
+    <rect class="head" width="330" height="46" rx="14"/>
+    <text x="18" y="30" class="headText">posts</text>
+    <text x="18" y="70" class="key">PK id</text>
+    <text x="18" y="92" class="key">FK author_id → users.id</text>
+    <text x="18" y="114" class="field">title, product_name</text>
+    <text x="18" y="136" class="field">content, category, notice</text>
+    <text x="18" y="158" class="field">price, min_participants</text>
+    <text x="18" y="180" class="field">current_quantity, status</text>
+    <text x="18" y="202" class="field">deadline</text>
+    <text x="18" y="224" class="field">pickup_type, pickup_zone_id</text>
+    <text x="18" y="246" class="field">pickup_location/date/time/guide</text>
+    <text x="18" y="268" class="field">group_buy_type, group_buy_mode</text>
+    <text x="18" y="290" class="field">target_participants, target_price</text>
+    <text x="18" y="312" class="field">tags JSON</text>
+    <text x="18" y="334" class="field">created_at, updated_at</text>
+  </g>
+
+  <!-- post images -->
+  <g transform="translate(70 470)">
+    <rect class="box" width="270" height="150"/>
+    <rect class="head" width="270" height="46" rx="14"/>
+    <text x="18" y="30" class="headText">post_images</text>
+    <text x="18" y="70" class="key">PK id</text>
+    <text x="18" y="92" class="key">FK post_id → posts.id</text>
+    <text x="18" y="114" class="field">image_url</text>
+    <text x="18" y="136" class="field">sort_order, created_at</text>
+  </g>
+
+  <!-- participants -->
+  <g transform="translate(850 120)">
+    <rect class="box" width="300" height="172"/>
+    <rect class="head" width="300" height="46" rx="14"/>
+    <text x="18" y="30" class="headText">post_participants</text>
+    <text x="18" y="70" class="key">PK id</text>
+    <text x="18" y="92" class="key">FK post_id → posts.id</text>
+    <text x="18" y="114" class="key">FK user_id → users.id</text>
+    <text x="18" y="136" class="field">participant_status</text>
+    <text x="18" y="158" class="field">UNIQUE(post_id, user_id)</text>
+  </g>
+
+  <!-- favorites -->
+  <g transform="translate(850 330)">
+    <rect class="box" width="300" height="150"/>
+    <rect class="head" width="300" height="46" rx="14"/>
+    <text x="18" y="30" class="headText">favorites</text>
+    <text x="18" y="70" class="key">PK id</text>
+    <text x="18" y="92" class="key">FK user_id → users.id</text>
+    <text x="18" y="114" class="key">FK post_id → posts.id</text>
+    <text x="18" y="136" class="field">UNIQUE(user_id, post_id)</text>
+  </g>
+
+  <!-- chat room -->
+  <g transform="translate(430 555)">
+    <rect class="box" width="300" height="128"/>
+    <rect class="head" width="300" height="46" rx="14"/>
+    <text x="18" y="30" class="headText">chat_rooms</text>
+    <text x="18" y="70" class="key">PK id</text>
+    <text x="18" y="92" class="key">FK/UK post_id → posts.id</text>
+    <text x="18" y="114" class="field">created_at, updated_at</text>
+  </g>
+
+  <!-- messages -->
+  <g transform="translate(430 755)">
+    <rect class="box" width="300" height="194"/>
+    <rect class="head" width="300" height="46" rx="14"/>
+    <text x="18" y="30" class="headText">messages</text>
+    <text x="18" y="70" class="key">PK id</text>
+    <text x="18" y="92" class="key">FK chat_room_id → chat_rooms.id</text>
+    <text x="18" y="114" class="key">FK sender_id → users.id</text>
+    <text x="18" y="136" class="field">content</text>
+    <text x="18" y="158" class="field">message_type</text>
+    <text x="18" y="180" class="field">is_read, created_at, updated_at</text>
+  </g>
+
+  <!-- notifications -->
+  <g transform="translate(800 565)">
+    <rect class="box" width="330" height="238"/>
+    <rect class="head" width="330" height="46" rx="14"/>
+    <text x="18" y="30" class="headText">notifications</text>
+    <text x="18" y="70" class="key">PK id</text>
+    <text x="18" y="92" class="key">FK user_id → users.id</text>
+    <text x="18" y="114" class="field">FK post_id → posts.id nullable</text>
+    <text x="18" y="136" class="field">FK chat_room_id → chat_rooms.id nullable</text>
+    <text x="18" y="158" class="field">type, title, message</text>
+    <text x="18" y="180" class="field">action_url</text>
+    <text x="18" y="202" class="field">is_read</text>
+    <text x="18" y="224" class="field">created_at, updated_at</text>
+  </g>
+
+  <!-- settings -->
+  <g transform="translate(70 700)">
+    <rect class="box" width="270" height="216"/>
+    <rect class="head" width="270" height="46" rx="14"/>
+    <text x="18" y="30" class="headText">user_settings</text>
+    <text x="18" y="70" class="key">PK id</text>
+    <text x="18" y="92" class="key">FK/UK user_id → users.id</text>
+    <text x="18" y="114" class="field">push_enabled</text>
+    <text x="18" y="136" class="field">chat_notification_enabled</text>
+    <text x="18" y="158" class="field">post_notification_enabled</text>
+    <text x="18" y="180" class="field">quiet_hours_start/end</text>
+    <text x="18" y="202" class="field">created_at, updated_at</text>
+  </g>
+
+  <!-- trust events -->
+  <g transform="translate(1200 130)">
+    <rect class="box" width="310" height="238"/>
+    <rect class="head" width="310" height="46" rx="14"/>
+    <text x="18" y="30" class="headText">trust_events</text>
+    <text x="18" y="70" class="key">PK id</text>
+    <text x="18" y="92" class="key">FK user_id → users.id</text>
+    <text x="18" y="114" class="field">FK actor_user_id → users.id nullable</text>
+    <text x="18" y="136" class="field">FK post_id → posts.id nullable</text>
+    <text x="18" y="158" class="field">type</text>
+    <text x="18" y="180" class="field">score_change</text>
+    <text x="18" y="202" class="field">previous_score, next_score</text>
+    <text x="18" y="224" class="field">reason, metadata JSON</text>
+  </g>
+
+  <!-- exceptions -->
+  <g transform="translate(1200 425)">
+    <rect class="box" width="310" height="260"/>
+    <rect class="head" width="310" height="46" rx="14"/>
+    <text x="18" y="30" class="headText">post_exceptions</text>
+    <text x="18" y="70" class="key">PK id</text>
+    <text x="18" y="92" class="key">FK post_id → posts.id</text>
+    <text x="18" y="114" class="key">FK reporter_id → users.id</text>
+    <text x="18" y="136" class="field">type, status, severity</text>
+    <text x="18" y="158" class="field">reason</text>
+    <text x="18" y="180" class="field">display_title, display_message</text>
+    <text x="18" y="202" class="field">old_price, new_price</text>
+    <text x="18" y="224" class="field">affected_quantity</text>
+    <text x="18" y="246" class="field">metadata, resolution_note</text>
+  </g>
+
+  <!-- notices/faqs -->
+  <g transform="translate(1170 760)">
+    <rect class="box" width="250" height="150"/>
+    <rect class="head" width="250" height="46" rx="14"/>
+    <text x="18" y="30" class="headText">notices</text>
+    <text x="18" y="70" class="key">PK id</text>
+    <text x="18" y="92" class="field">title, summary, content</text>
+    <text x="18" y="114" class="field">type, is_pinned</text>
+    <text x="18" y="136" class="field">created_at, updated_at</text>
+  </g>
+
+  <g transform="translate(1170 960)">
+    <rect class="box" width="250" height="150"/>
+    <rect class="head" width="250" height="46" rx="14"/>
+    <text x="18" y="30" class="headText">faqs</text>
+    <text x="18" y="70" class="key">PK id</text>
+    <text x="18" y="92" class="field">category</text>
+    <text x="18" y="114" class="field">question, answer</text>
+    <text x="18" y="136" class="field">sort_order, is_active</text>
+  </g>
+
+  <!-- relation lines -->
+  <path class="rel" d="M340 235 C375 235 390 220 430 220"/>
+  <text x="360" y="210" class="relText">1:N 작성</text>
+
+  <path class="rel" d="M430 430 C390 500 380 535 340 545"/>
+  <text x="350" y="500" class="relText">1:N 이미지</text>
+
+  <path class="rel" d="M760 210 C800 210 805 205 850 205"/>
+  <text x="780" y="190" class="relText">1:N 참여</text>
+
+  <path class="rel" d="M340 250 C705 250 720 180 850 180"/>
+  <text x="620" y="170" class="relText">1:N 참여자</text>
+
+  <path class="rel" d="M760 355 C815 355 815 390 850 390"/>
+  <text x="780" y="345" class="relText">1:N 찜</text>
+
+  <path class="rel" d="M340 280 C700 520 760 410 850 410"/>
+  <text x="615" y="450" class="relText">1:N 찜 사용자</text>
+
+  <path class="rel" d="M595 470 C595 505 590 525 590 555"/>
+  <text x="610" y="525" class="relText">1:0..1</text>
+
+  <path class="rel" d="M590 683 C590 710 590 730 590 755"/>
+  <text x="610" y="720" class="relText">1:N</text>
+
+  <path class="rel" d="M340 310 C390 780 390 835 430 850"/>
+  <text x="356" y="820" class="relText">발신</text>
+
+  <path class="rel" d="M340 330 C520 650 640 650 800 650"/>
+  <text x="515" y="635" class="relText">알림 수신</text>
+
+  <path class="rel" d="M730 620 C760 620 770 630 800 630"/>
+  <text x="742" y="610" class="relText">채팅 알림</text>
+
+  <path class="rel" d="M760 420 C795 500 810 560 840 565"/>
+  <text x="780" y="500" class="relText">게시글 알림</text>
+
+  <path class="rel" d="M205 374 C205 600 205 660 205 700"/>
+  <text x="218" y="675" class="relText">1:0..1 설정</text>
+
+  <path class="rel" d="M760 245 C1000 210 1050 210 1200 210"/>
+  <text x="980" y="195" class="relText">신뢰 이벤트</text>
+
+  <path class="rel" d="M340 190 C800 90 950 130 1200 180"/>
+  <text x="730" y="115" class="relText">사용자/행위자</text>
+
+  <path class="rel" d="M760 360 C990 410 1050 510 1200 535"/>
+  <text x="975" y="445" class="relText">예외 상황</text>
+
+  <path class="rel" d="M340 340 C820 520 920 565 1200 585"/>
+  <text x="820" y="545" class="relText">신고자</text>
+
+  <!-- code-managed pickup zone note -->
+  <g transform="translate(800 870)">
+    <rect class="pill" width="330" height="84"/>
+    <text x="16" y="28" class="note">pickup_zone_id는 FK가 아님</text>
+    <text x="16" y="50" class="note">src/types/pickup-zone.ts 코드 상수 참조</text>
+    <text x="16" y="72" class="note">예: s2810, dormitory-lobby</text>
+  </g>
+</svg>

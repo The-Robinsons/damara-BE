@@ -1,0 +1,193 @@
+<svg width="1920" height="2160" viewBox="0 0 1920 2160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .bg{fill:#FFFFFF}
+      .pageBorder{fill:#FFFFFF;stroke:#D8E2EF;stroke-width:2}
+      .title{font-family:Arial,sans-serif;font-size:64px;font-weight:800;fill:#0B1F3A;letter-spacing:0}
+      .subtitle{font-family:Arial,sans-serif;font-size:30px;font-weight:500;fill:#526783;letter-spacing:0}
+      .panelTitle{font-family:Arial,sans-serif;font-size:34px;font-weight:800;fill:#FFFFFF;letter-spacing:0}
+      .sectionTitle{font-family:Arial,sans-serif;font-size:34px;font-weight:800;fill:#17365D;letter-spacing:0}
+      .bodyText{font-family:Arial,sans-serif;font-size:28px;font-weight:500;fill:#17365D;letter-spacing:0}
+      .mutedText{font-family:Arial,sans-serif;font-size:25px;font-weight:500;fill:#526783;letter-spacing:0}
+      .metric{font-family:Arial,sans-serif;font-size:76px;font-weight:800;fill:#17365D;letter-spacing:0}
+      .metricLabel{font-family:Arial,sans-serif;font-size:30px;font-weight:800;fill:#284B74;letter-spacing:0}
+      .badgeText{font-family:Arial,sans-serif;font-size:31px;font-weight:800;fill:#FFFFFF;letter-spacing:0}
+      .chipText{font-family:Arial,sans-serif;font-size:24px;font-weight:700;fill:#17365D;letter-spacing:0}
+      .navy{fill:#17365D}
+      .navyDark{fill:#0B1F3A}
+      .panel{fill:#F7FAFE;stroke:#17365D;stroke-width:3;rx:24}
+      .panelHead{fill:#17365D}
+      .soft{fill:#EAF2FB;stroke:#9CB4D0;stroke-width:2;rx:18}
+      .chip{fill:#FFFFFF;stroke:#B5C7DC;stroke-width:2;rx:12}
+      .arrow{stroke:#17365D;stroke-width:8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+      .thinLine{stroke:#9CB4D0;stroke-width:2;stroke-dasharray:8 8}
+    </style>
+    <marker id="arrowHead" markerWidth="18" markerHeight="18" refX="16" refY="9" orient="auto" markerUnits="strokeWidth">
+      <path d="M0 0 L18 9 L0 18 Z" fill="#17365D"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1920" height="2160"/>
+
+  <!-- Page 1 -->
+  <g id="page-1">
+    <rect class="pageBorder" x="0" y="0" width="1920" height="1080"/>
+    <text x="140" y="125" class="title">ERD는 어떻게 달라졌는가</text>
+    <text x="142" y="172" class="subtitle">중간 프로젝트의 기본 공동구매 구조에서 최종 서비스 운영 구조로 확장</text>
+
+    <g transform="translate(140 235)">
+      <rect class="panel" width="650" height="560"/>
+      <path class="panelHead" d="M24 0H626C639.255 0 650 10.745 650 24V78H0V24C0 10.745 10.745 0 24 0Z"/>
+      <text x="34" y="51" class="panelTitle">Midterm ERD</text>
+
+      <text x="34" y="137" class="metric">8</text>
+      <text x="122" y="125" class="metricLabel">개 핵심 테이블</text>
+      <text x="122" y="164" class="sectionTitle">기본 거래 구조</text>
+      <text x="34" y="222" class="bodyText">공구 등록, 참여, 찜, 채팅, 알림 중심</text>
+      <line x1="34" y1="260" x2="616" y2="260" class="thinLine"/>
+
+      <g transform="translate(34 298)">
+        <rect class="chip" width="126" height="46"/><text x="28" y="30" class="chipText">users</text>
+        <rect class="chip" x="148" width="126" height="46"/><text x="183" y="30" class="chipText">posts</text>
+        <rect class="chip" x="296" width="186" height="46"/><text x="318" y="30" class="chipText">post_images</text>
+      </g>
+      <g transform="translate(34 360)">
+        <rect class="chip" width="244" height="46"/><text x="18" y="30" class="chipText">post_participants</text>
+        <rect class="chip" x="266" width="144" height="46"/><text x="291" y="30" class="chipText">favorites</text>
+        <rect class="chip" x="432" width="164" height="46"/><text x="453" y="30" class="chipText">chat_rooms</text>
+      </g>
+      <g transform="translate(34 422)">
+        <rect class="chip" width="150" height="46"/><text x="27" y="30" class="chipText">messages</text>
+        <rect class="chip" x="172" width="205" height="46"/><text x="192" y="30" class="chipText">notifications</text>
+      </g>
+
+      <g transform="translate(34 500)">
+        <rect class="soft" width="582" height="40"/>
+        <text x="22" y="27" class="mutedText">초점: 사용자가 공구를 만들고 참여하는 기본 흐름</text>
+      </g>
+    </g>
+
+    <g transform="translate(1130 235)">
+      <rect class="panel" width="650" height="560"/>
+      <path class="panelHead" d="M24 0H626C639.255 0 650 10.745 650 24V78H0V24C0 10.745 10.745 0 24 0Z"/>
+      <text x="34" y="51" class="panelTitle">Final ERD</text>
+
+      <text x="34" y="137" class="metric">13</text>
+      <text x="162" y="125" class="metricLabel">개 테이블</text>
+      <text x="162" y="164" class="sectionTitle">안전 거래와 운영 구조</text>
+      <text x="34" y="222" class="bodyText">신뢰도, 예외 처리, 설정, 공지/FAQ 추가</text>
+      <line x1="34" y1="260" x2="616" y2="260" class="thinLine"/>
+
+      <g transform="translate(34 298)">
+        <rect class="chip" width="190" height="46"/><text x="22" y="30" class="chipText">trust_events</text>
+        <rect class="chip" x="212" width="252" height="46"/><text x="231" y="30" class="chipText">post_exceptions</text>
+      </g>
+      <g transform="translate(34 360)">
+        <rect class="chip" width="214" height="46"/><text x="22" y="30" class="chipText">user_settings</text>
+        <rect class="chip" x="236" width="138" height="46"/><text x="270" y="30" class="chipText">notices</text>
+      </g>
+      <g transform="translate(34 422)">
+        <rect class="chip" width="110" height="46"/><text x="38" y="30" class="chipText">faqs</text>
+        <rect class="chip" x="132" width="240" height="46"/><text x="154" y="30" class="chipText">posts 필드 고도화</text>
+      </g>
+
+      <g transform="translate(34 500)">
+        <rect class="soft" width="582" height="40"/>
+        <text x="22" y="27" class="mutedText">초점: 문제 대응과 운영까지 가능한 서비스 구조</text>
+      </g>
+    </g>
+
+    <g transform="translate(835 374)">
+      <rect class="navy" width="250" height="62" rx="31"/>
+      <text x="48" y="41" class="badgeText">+5 tables</text>
+      <line x1="0" y1="105" x2="235" y2="105" class="arrow"/>
+      <path d="M235 82 L290 105 L235 128 Z" class="navy"/>
+      <text x="47" y="188" class="sectionTitle">기본 거래</text>
+      <text x="105" y="233" class="sectionTitle">↓</text>
+      <text x="47" y="280" class="sectionTitle">안전 거래</text>
+      <text x="47" y="325" class="sectionTitle">운영 대응</text>
+    </g>
+
+    <g transform="translate(210 855)">
+      <rect class="soft" width="460" height="125"/>
+      <text x="28" y="43" class="sectionTitle">거래 기능 고도화</text>
+      <text x="28" y="80" class="mutedText">상품명 검색, 수령 방식,</text>
+      <text x="28" y="110" class="mutedText">다마라존, 목표 가격/인원</text>
+    </g>
+    <g transform="translate(730 855)">
+      <rect class="soft" width="460" height="125"/>
+      <text x="28" y="43" class="sectionTitle">안전 거래 강화</text>
+      <text x="28" y="80" class="mutedText">신뢰 이벤트와 예외 케이스</text>
+      <text x="28" y="110" class="mutedText">이력 관리</text>
+    </g>
+    <g transform="translate(1250 855)">
+      <rect class="soft" width="460" height="125"/>
+      <text x="28" y="43" class="sectionTitle">운영 콘텐츠 추가</text>
+      <text x="28" y="80" class="mutedText">공지사항, FAQ,</text>
+      <text x="28" y="110" class="mutedText">사용자 알림 설정 분리</text>
+    </g>
+  </g>
+
+  <!-- Page 2 -->
+  <g id="page-2" transform="translate(0 1080)">
+    <rect class="pageBorder" x="0" y="0" width="1920" height="1080"/>
+    <text x="140" y="125" class="title">최종 ERD의 발전 포인트</text>
+    <text x="142" y="172" class="subtitle">단순 공동구매 DB에서 실제 운영 가능한 안전 거래 DB로 발전</text>
+
+    <g transform="translate(120 230)">
+      <rect class="panel" width="520" height="285"/>
+      <path class="panelHead" d="M24 0H496C509.255 0 520 10.745 520 24V72H0V24C0 10.745 10.745 0 24 0Z"/>
+      <text x="28" y="48" class="panelTitle">1. posts 고도화</text>
+      <text x="30" y="112" class="bodyText">상품명 검색과 카테고리</text>
+      <text x="30" y="152" class="bodyText">직접 입력 / 다마라존 수령 방식</text>
+      <text x="30" y="192" class="bodyText">선모집 / 후모집 거래 방식</text>
+      <text x="30" y="232" class="bodyText">목표 인원과 목표 가격 관리</text>
+    </g>
+
+    <g transform="translate(700 230)">
+      <rect class="panel" width="520" height="285"/>
+      <path class="panelHead" d="M24 0H496C509.255 0 520 10.745 520 24V72H0V24C0 10.745 10.745 0 24 0Z"/>
+      <text x="28" y="48" class="panelTitle">2. 신뢰도 이력화</text>
+      <text x="30" y="112" class="bodyText">trust_events 추가</text>
+      <text x="30" y="152" class="bodyText">완료, 취소, 노쇼, 약속 확인 기록</text>
+      <text x="30" y="192" class="bodyText">점수 변동 전후값 저장</text>
+      <text x="30" y="232" class="bodyText">신뢰 점수의 근거를 추적 가능</text>
+    </g>
+
+    <g transform="translate(1280 230)">
+      <rect class="panel" width="520" height="285"/>
+      <path class="panelHead" d="M24 0H496C509.255 0 520 10.745 520 24V72H0V24C0 10.745 10.745 0 24 0Z"/>
+      <text x="28" y="48" class="panelTitle">3. 예외 케이스 대응</text>
+      <text x="30" y="112" class="bodyText">post_exceptions 추가</text>
+      <text x="30" y="152" class="bodyText">가격 변경, 품절, 파손, 수령 변경</text>
+      <text x="30" y="192" class="bodyText">open / resolved / dismissed 추적</text>
+      <text x="30" y="232" class="bodyText">경고 배지와 알림으로 참여자 공유</text>
+    </g>
+
+    <g transform="translate(230 575)">
+      <rect class="panel" width="670" height="260"/>
+      <path class="panelHead" d="M24 0H646C659.255 0 670 10.745 670 24V72H0V24C0 10.745 10.745 0 24 0Z"/>
+      <text x="28" y="48" class="panelTitle">4. 사용자 설정 분리</text>
+      <text x="30" y="112" class="bodyText">user_settings 추가</text>
+      <text x="30" y="152" class="bodyText">채팅 알림, 공구 알림, 마케팅 알림 관리</text>
+      <text x="30" y="192" class="bodyText">방해금지 시간 설정</text>
+      <text x="30" y="232" class="bodyText">마이페이지 설정 API와 직접 연결</text>
+    </g>
+
+    <g transform="translate(1020 575)">
+      <rect class="panel" width="670" height="260"/>
+      <path class="panelHead" d="M24 0H646C659.255 0 670 10.745 670 24V72H0V24C0 10.745 10.745 0 24 0Z"/>
+      <text x="28" y="48" class="panelTitle">5. 운영 콘텐츠 추가</text>
+      <text x="30" y="112" class="bodyText">notices, faqs 추가</text>
+      <text x="30" y="152" class="bodyText">공지사항과 FAQ를 서버 데이터로 제공</text>
+      <text x="30" y="192" class="bodyText">초기 기본 데이터 자동 보정</text>
+      <text x="30" y="232" class="bodyText">프론트 하드코딩 의존도 감소</text>
+    </g>
+
+    <g transform="translate(240 890)">
+      <rect class="navyDark" width="1440" height="130" rx="28"/>
+      <text x="55" y="48" class="badgeText">발표용 한 줄</text>
+      <text x="55" y="90" class="badgeText">중간 ERD는 기본 거래 흐름, 최종 ERD는 안전 거래와 운영 대응까지 포함한 실제 서비스 구조입니다.</text>
+    </g>
+  </g>
+</svg>

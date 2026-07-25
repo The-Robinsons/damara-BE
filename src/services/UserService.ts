@@ -29,6 +29,12 @@ import {
   ParticipantStatus,
 } from "../types/participant-status";
 import { TrustEventType } from "../models/TrustEvent";
+import ENV from "../common/constants/ENV";
+import { EmailVerificationService, normalizeEmail } from "./EmailVerificationService";
+
+type RegisterUserInput = UserCreationAttributes & {
+  emailVerificationToken?: string;
+};
 
 type MyPostsSummaryOptions = {
   deadlineSoonHours: number;
@@ -328,29 +334,53 @@ export const UserService = {
    * - Service는 DB 또는 HTTP를 몰라야 한다
    * - 순수 비즈니스 로직만 처리 (중복 체크, 비밀번호 해싱)
    */
-  async registerUser(data: UserCreationAttributes) {
+  async registerUser(data: RegisterUserInput) {
+    const { emailVerificationToken, ...userData } = data;
+    userData.email = normalizeEmail(userData.email);
+
+    if (ENV.EmailVerificationRequired && !emailVerificationToken) {
+      throw new RouteError(
+        HttpStatusCodes.UNAUTHORIZED,
+        "EMAIL_VERIFICATION_REQUIRED"
+      );
+    }
+
     // 1) 이메일 중복 검사
-    const emailExists = await UserRepo.findByEmail(data.email);
+    const emailExists = await UserRepo.findByEmail(userData.email);
     if (emailExists) {
       throw new EmailAlreadyExistsError();
     }
 
     // 2) 학번 중복 검사
-    const studentIdExists = await UserRepo.findByStudentId(data.studentId);
+    const studentIdExists = await UserRepo.findByStudentId(userData.studentId);
     if (studentIdExists) {
       throw new StudentIdAlreadyExistsError();
     }
 
     // 3) 비밀번호 해싱
-    const hashedPassword = await bcrypt.hash(data.passwordHash, 10);
+    const hashedPassword = await bcrypt.hash(userData.passwordHash, 10);
 
-    // 4) UserRepo를 통해 회원 생성
-    const user = await UserRepo.create({
-      ...data,
-      passwordHash: hashedPassword,
-    });
+    const createUser = async (transaction?: import("sequelize").Transaction) =>
+      await UserRepo.create(
+        {
+          ...userData,
+          passwordHash: hashedPassword,
+        },
+        transaction
+      );
 
-    return TrustService.withTrustGrade(user);
+    // 4) UserRepo를 통해 회원 생성하고 인증 토큰을 원자적으로 소비
+    const user = ENV.EmailVerificationRequired
+      ? await EmailVerificationService.consumeToken(
+          userData.email,
+          emailVerificationToken as string,
+          createUser
+        )
+      : await createUser();
+
+    return TrustService.withTrustGrade(
+      user as Awaited<ReturnType<typeof UserRepo.create>>
+    );
   },
 
   /**

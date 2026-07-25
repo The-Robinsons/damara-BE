@@ -28,4 +28,7 @@ export default {
   Faqs: {
     Base: "/faqs",
   },
+  EmailVerifications: {
+    Base: "/auth/email-verifications",
+  },
 } as const;

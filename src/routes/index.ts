@@ -9,6 +9,7 @@ import notificationRouter from "./notifications/NotificationRoutes";
 import noticeRouter from "./notices/NoticeRoutes";
 import pickupZoneRouter from "./pickup-zones/PickupZoneRoutes";
 import faqRouter from "./faqs/FaqRoutes";
+import emailVerificationRouter from "./email-verifications/EmailVerificationRoutes";
 
 const BaseRouter = Router();
 
@@ -35,5 +36,8 @@ BaseRouter.use(Paths.PickupZones.Base, pickupZoneRouter);
 
 // FAQ 라우터: /api/faqs
 BaseRouter.use(Paths.Faqs.Base, faqRouter);
+
+// Email verification 라우터: /api/auth/email-verifications
+BaseRouter.use(Paths.EmailVerifications.Base, emailVerificationRouter);
 
 export default BaseRouter;

@@ -47,6 +47,7 @@ import NoticeModel from "./models/Notice";
 import FaqModel from "./models/Faq";
 import "./models/Notification";
 import "./models/PostException";
+import "./models/EmailVerification";
 
 const app = express();
 app.set("trust proxy", true);

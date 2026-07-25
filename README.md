@@ -155,6 +155,31 @@ Check for typescript errors.
 4. **Swagger 변경 이력**:
    - Swagger/OpenAPI 스키마 변경은 [Swagger 변경 이력 문서](./docs/api/SWAGGER_CHANGELOG.md)에 기록합니다.
 
+### 회원가입 이메일 인증 설정
+
+로컬 개발과 테스트는 `MAIL_PROVIDER=json`을 사용하면 외부 SMTP 없이 메일을 생성할 수 있습니다. 실제 메일을 발송하는 운영 환경에서는 다음 값을 설정해야 합니다.
+
+```bash
+MAIL_PROVIDER=smtp
+MAIL_FROM=no-reply@example.com
+MAIL_FROM_NAME=DAMARA
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASSWORD=
+EMAIL_VERIFICATION_CODE_TTL_SECONDS=300
+EMAIL_VERIFICATION_TOKEN_TTL_SECONDS=900
+EMAIL_VERIFICATION_RESEND_SECONDS=60
+EMAIL_VERIFICATION_MAX_ATTEMPTS=5
+EMAIL_VERIFICATION_MAX_SENDS_PER_HOUR=5
+EMAIL_VERIFICATION_MAX_IP_SENDS_PER_HOUR=20
+EMAIL_VERIFICATION_REQUIRED=true
+EMAIL_VERIFICATION_HMAC_SECRET=
+```
+
+운영 환경에서는 `MAIL_FROM`, `SMTP_HOST`, `EMAIL_VERIFICATION_HMAC_SECRET`가 필수다. HMAC 비밀 값과 SMTP 비밀번호는 저장소나 로그에 남기지 않는다.
+
 ### Swagger에서 할 수 있는 것
 
 - 모든 API 엔드포인트 목록 확인

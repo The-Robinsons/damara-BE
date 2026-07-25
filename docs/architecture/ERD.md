@@ -27,6 +27,24 @@ erDiagram
       DATETIME updated_at
     }
 
+    email_verifications {
+      UUID id PK
+      STRING email
+      STRING purpose
+      STRING code_hash
+      STRING token_hash UK
+      INTEGER attempt_count
+      INTEGER max_attempts
+      DATETIME expires_at
+      DATETIME verified_at
+      DATETIME token_expires_at
+      DATETIME consumed_at
+      DATETIME invalidated_at
+      STRING request_ip_hash
+      DATETIME created_at
+      DATETIME updated_at
+    }
+
     posts {
       UUID id PK
       UUID author_id FK
@@ -219,6 +237,8 @@ trust_score: 내부 신뢰 점수
 ```
 
 `user_settings`는 사용자별 알림 설정이다. `users`와 1:1 관계이며 `user_id`가 unique이다.
+
+`email_verifications`는 회원가입 전에 이메일 소유 여부를 확인하기 위한 독립 테이블이다. 아직 생성되지 않은 사용자의 이메일을 다루므로 `users`와 FK 관계를 맺지 않는다. 인증번호와 일회성 토큰은 원문 대신 HMAC 해시로 저장하며, `consumed_at`으로 회원가입 사용 여부를 관리한다.
 
 ### 2. 공동구매 게시글
 

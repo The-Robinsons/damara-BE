@@ -27,6 +27,28 @@ src/routes/**/*.ts
 https://be.damara.bluerack.org/api-docs.json
 ```
 
+## 2026-07-24 - 회원가입 이메일 인증 API 추가
+
+### 변경 요약
+
+회원가입 전에 이메일로 6자리 인증번호를 발송하고 확인하는 API를 추가했다.
+인증 성공 시 15분 동안 유효한 일회성 토큰을 반환하며, `POST /api/users` 요청에는 이 토큰이 필수로 추가된다.
+
+### 신규 API
+
+```text
+POST /api/auth/email-verifications/send
+POST /api/auth/email-verifications/verify
+```
+
+### 회원가입 요청 변경
+
+```text
+user.emailVerificationToken: string (required)
+```
+
+신규 상태 코드는 발송 제한 `429`, 메일 전송 실패 `502`, 인증번호 또는 토큰 만료 `410`, 인증 시도 초과 `423`이다.
+
 ## 2026-06-01 - 마이페이지 프로필 이미지 API 추가
 
 브랜치:

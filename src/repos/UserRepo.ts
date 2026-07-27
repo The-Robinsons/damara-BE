@@ -6,19 +6,20 @@ import {
   EmailAlreadyExistsError,
   StudentIdAlreadyExistsError,
 } from "../common/util/route-errors";
+import { Transaction } from "sequelize";
 
 export const UserRepo = {
   /**
    * 사용자 생성
    */
-  async create(data: UserCreationAttributes) {
+  async create(data: UserCreationAttributes, transaction?: Transaction) {
     try {
       // trustScore가 제공되지 않으면 기본 내부 점수 50으로 설정
       const userData = {
         ...data,
         trustScore: data.trustScore ?? 50,
       };
-      const user = await UserModel.create(userData);
+      const user = await UserModel.create(userData, { transaction });
       return user.get(); // plain object로 변환
     } catch (e: unknown) {
       // Sequelize 고유 에러 코드: unique constraint

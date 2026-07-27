@@ -93,9 +93,73 @@ const options: swaggerJsdoc.Options = {
         name: "Faqs",
         description: "FAQ API",
       },
+      {
+        name: "Email Verifications",
+        description: "회원가입 이메일 인증 API",
+      },
     ],
     components: {
       schemas: {
+        SendEmailVerificationRequest: {
+          type: "object",
+          required: ["email"],
+          properties: {
+            email: {
+              type: "string",
+              format: "email",
+              example: "user@example.com",
+            },
+          },
+        },
+        SendEmailVerificationResponse: {
+          type: "object",
+          required: [
+            "message",
+            "expiresInSeconds",
+            "resendAfterSeconds",
+          ],
+          properties: {
+            message: {
+              type: "string",
+              example: "VERIFICATION_EMAIL_SENT",
+            },
+            expiresInSeconds: { type: "integer", example: 300 },
+            resendAfterSeconds: { type: "integer", example: 60 },
+          },
+        },
+        VerifyEmailVerificationRequest: {
+          type: "object",
+          required: ["email", "code"],
+          properties: {
+            email: {
+              type: "string",
+              format: "email",
+              example: "user@example.com",
+            },
+            code: {
+              type: "string",
+              pattern: "^[0-9]{6}$",
+              example: "381204",
+            },
+          },
+        },
+        VerifyEmailVerificationResponse: {
+          type: "object",
+          required: [
+            "verified",
+            "emailVerificationToken",
+            "expiresInSeconds",
+          ],
+          properties: {
+            verified: { type: "boolean", example: true },
+            emailVerificationToken: {
+              type: "string",
+              description: "회원가입에 한 번만 사용할 수 있는 인증 토큰",
+              example: "opaque-one-time-token",
+            },
+            expiresInSeconds: { type: "integer", example: 900 },
+          },
+        },
         User: {
           type: "object",
           required: [

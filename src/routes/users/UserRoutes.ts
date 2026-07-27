@@ -76,12 +76,13 @@ userRouter.get("/", getAllUsers);
  *                   - passwordHash
  *                   - nickname
  *                   - studentId
+ *                   - emailVerificationToken
  *                 properties:
  *                   email:
  *                     type: string
  *                     format: email
- *                     example: "test@mju.ac.kr"
- *                     description: 명지대학교 이메일 형식 권장
+ *                     example: "user@example.com"
+ *                     description: 인증을 완료한 이메일 주소
  *                   passwordHash:
  *                     type: string
  *                     minLength: 8
@@ -106,14 +107,19 @@ userRouter.get("/", getAllUsers);
  *                     format: uri
  *                     example: "https://example.com/avatar.jpg"
  *                     description: 프로필 이미지 URL (선택사항)
+ *                   emailVerificationToken:
+ *                     type: string
+ *                     example: "opaque-one-time-token"
+ *                     description: 이메일 인증 성공 후 발급받은 일회성 토큰
  *           example:
  *             user:
- *               email: "test@mju.ac.kr"
+ *               email: "user@example.com"
  *               passwordHash: "mypassword123"
  *               nickname: "홍길동"
  *               studentId: "20241234"
  *               department: "컴퓨터공학과"
  *               avatarUrl: "http://3.38.145.117:3000/uploads/images/abc123.png"
+ *               emailVerificationToken: "opaque-one-time-token"
  *     responses:
  *       201:
  *         description: 회원가입 성공
@@ -122,11 +128,17 @@ userRouter.get("/", getAllUsers);
  *             schema:
  *               $ref: '#/components/schemas/User'
  *       400:
- *         description: 유효성 검증 실패 또는 중복된 이메일/학번
+ *         description: 유효성 검증 실패
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: 이메일 인증 토큰 누락, 불일치 또는 변조
+ *       410:
+ *         description: 이메일 인증 토큰 만료
+ *       409:
+ *         description: 중복된 이메일 또는 학번
  */
 // POST /api/users - 회원가입
 userRouter.post("/", createUser);

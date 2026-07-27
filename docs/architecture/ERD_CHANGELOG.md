@@ -16,6 +16,22 @@ DB 구조가 바뀌면 다음 내용을 기록한다.
 6. API 응답 영향
 7. 배포 시 마이그레이션 주의점
 
+## 2026-07-24 - 이메일 인증 요청 테이블 추가
+
+### 변경 요약
+
+회원가입 이메일 인증번호의 만료, 재발송, 입력 제한과 일회성 인증 토큰 소비를 관리하기 위해 `email_verifications` 테이블을 추가했다.
+
+### 신규 테이블
+
+```text
+email_verifications
+```
+
+주요 컬럼은 `email`, `purpose`, `code_hash`, `token_hash`, `attempt_count`, `max_attempts`, `expires_at`, `verified_at`, `token_expires_at`, `consumed_at`, `invalidated_at`, `request_ip_hash`이다.
+
+인증번호와 인증 토큰은 원문이 아닌 HMAC 해시로 저장한다. 회원가입 시 인증 레코드를 잠그고 사용자 생성과 토큰 소비를 같은 트랜잭션에서 처리한다.
+
 ## 2026-05-31 - 다마라존 수령 방식 컬럼 추가
 
 브랜치:

@@ -51,10 +51,91 @@
     {
       "name": "Faqs",
       "description": "FAQ API"
+    },
+    {
+      "name": "Email Verifications",
+      "description": "회원가입 이메일 인증 API"
     }
   ],
   "components": {
     "schemas": {
+      "SendEmailVerificationRequest": {
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          }
+        }
+      },
+      "SendEmailVerificationResponse": {
+        "type": "object",
+        "required": [
+          "message",
+          "expiresInSeconds",
+          "resendAfterSeconds"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "VERIFICATION_EMAIL_SENT"
+          },
+          "expiresInSeconds": {
+            "type": "integer",
+            "example": 300
+          },
+          "resendAfterSeconds": {
+            "type": "integer",
+            "example": 60
+          }
+        }
+      },
+      "VerifyEmailVerificationRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "code"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$",
+            "example": "381204"
+          }
+        }
+      },
+      "VerifyEmailVerificationResponse": {
+        "type": "object",
+        "required": [
+          "verified",
+          "emailVerificationToken",
+          "expiresInSeconds"
+        ],
+        "properties": {
+          "verified": {
+            "type": "boolean",
+            "example": true
+          },
+          "emailVerificationToken": {
+            "type": "string",
+            "description": "회원가입에 한 번만 사용할 수 있는 인증 토큰",
+            "example": "opaque-one-time-token"
+          },
+          "expiresInSeconds": {
+            "type": "integer",
+            "example": 900
+          }
+        }
+      },
       "User": {
         "type": "object",
         "required": [
@@ -125,6 +206,44 @@
             "type": "string",
             "format": "date-time",
             "description": "수정일시"
+          }
+        }
+      },
+      "UserProfileImageResponse": {
+        "type": "object",
+        "required": [
+          "avatarUrl",
+          "user"
+        ],
+        "properties": {
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "사용자에게 반영된 프로필 이미지 URL. null이면 이미지 없음",
+            "example": "/uploads/images/abc123.png"
+          },
+          "image": {
+            "type": "object",
+            "nullable": true,
+            "description": "파일 업로드 요청에서 생성된 이미지 정보",
+            "properties": {
+              "imageUrl": {
+                "type": "string",
+                "example": "/uploads/images/abc123.png"
+              },
+              "url": {
+                "type": "string",
+                "description": "기존 클라이언트 호환용 URL",
+                "example": "/uploads/images/abc123.png"
+              },
+              "filename": {
+                "type": "string",
+                "example": "abc123.png"
+              }
+            }
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
           }
         }
       },
@@ -455,6 +574,11 @@
             "description": "공지 유형",
             "example": "service"
           },
+          "category": {
+            "type": "string",
+            "description": "프론트 표시용 공지 카테고리. 기본값은 summary가 있으면 summary, 없으면 type 라벨입니다.",
+            "example": "서비스 안내"
+          },
           "isPinned": {
             "type": "boolean",
             "description": "상단 고정 여부",
@@ -469,11 +593,6 @@
             "type": "string",
             "format": "date-time",
             "description": "수정일시"
-          },
-          "category": {
-            "type": "string",
-            "description": "프론트 표시용 공지 카테고리. 기본값은 summary가 있으면 summary, 없으면 type 라벨입니다.",
-            "example": "서비스 안내"
           }
         }
       },
@@ -755,6 +874,84 @@
           }
         }
       },
+      "PickupZone": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "campus",
+          "campusLabel",
+          "detailLocation",
+          "displayName",
+          "description",
+          "isActive",
+          "sortOrder"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "다마라존 ID. 게시글 등록 시 pickupZoneId로 전달합니다.",
+            "example": "s2810"
+          },
+          "name": {
+            "type": "string",
+            "description": "짧은 장소명",
+            "example": "S2810"
+          },
+          "campus": {
+            "type": "string",
+            "enum": [
+              "humanities",
+              "natural",
+              "shared"
+            ],
+            "description": "캠퍼스 구분",
+            "example": "natural"
+          },
+          "campusLabel": {
+            "type": "string",
+            "description": "캠퍼스 표시명",
+            "example": "자연캠퍼스"
+          },
+          "building": {
+            "type": "string",
+            "nullable": true,
+            "description": "건물명",
+            "example": "S동"
+          },
+          "floor": {
+            "type": "string",
+            "nullable": true,
+            "description": "층 정보",
+            "example": "2층"
+          },
+          "detailLocation": {
+            "type": "string",
+            "description": "건물 내 상세 위치",
+            "example": "S2810"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "프론트 표시용 전체 장소명",
+            "example": "자연캠퍼스 S2810"
+          },
+          "description": {
+            "type": "string",
+            "description": "장소 설명",
+            "example": "자연캠퍼스 S동 2층 S2810 앞 공식 접선지"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "사용 가능 여부",
+            "example": true
+          },
+          "sortOrder": {
+            "type": "integer",
+            "description": "표시 순서",
+            "example": 10
+          }
+        }
+      },
       "Post": {
         "type": "object",
         "required": [
@@ -892,6 +1089,49 @@
             "description": "공구 A/B 타입 (pre_recruit=선모집형, post_recruit=후모집형)",
             "example": "pre_recruit"
           },
+          "groupBuyMode": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "price_unlock"
+            ],
+            "description": "거래 세부 모드 (normal=기본형, price_unlock=모이면 싸지는 공구)",
+            "example": "price_unlock"
+          },
+          "targetParticipants": {
+            "type": "integer",
+            "nullable": true,
+            "description": "price_unlock 목표 참여 인원. 이 인원 이상이면 목표 가격이 적용됩니다.",
+            "example": 5
+          },
+          "targetPrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "price_unlock 목표 달성 가격",
+            "example": 4500
+          },
+          "currentPrice": {
+            "type": "number",
+            "description": "현재 참여 인원 기준 프론트 표시 가격. 목표 달성 전에는 price, 달성 후에는 targetPrice입니다.",
+            "example": 5000
+          },
+          "participantsToUnlock": {
+            "type": "integer",
+            "nullable": true,
+            "description": "목표 가격 해금까지 남은 참여자 수. price_unlock이 아니면 null입니다.",
+            "example": 2
+          },
+          "priceUnlocked": {
+            "type": "boolean",
+            "description": "목표 가격 달성 여부",
+            "example": false
+          },
+          "dealMessage": {
+            "type": "string",
+            "nullable": true,
+            "description": "프론트가 그대로 표시할 수 있는 거래 방식 안내 문구",
+            "example": "2명만 더 모이면 4,500원"
+          },
           "tags": {
             "type": "array",
             "nullable": true,
@@ -990,49 +1230,6 @@
             "type": "string",
             "format": "date-time",
             "description": "수정일시"
-          },
-          "groupBuyMode": {
-            "type": "string",
-            "enum": [
-              "normal",
-              "price_unlock"
-            ],
-            "description": "거래 세부 모드 (normal=기본형, price_unlock=모이면 싸지는 공구)",
-            "example": "price_unlock"
-          },
-          "targetParticipants": {
-            "type": "integer",
-            "nullable": true,
-            "description": "price_unlock 목표 참여 인원. 이 인원 이상이면 목표 가격이 적용됩니다.",
-            "example": 5
-          },
-          "targetPrice": {
-            "type": "number",
-            "nullable": true,
-            "description": "price_unlock 목표 달성 가격",
-            "example": 4500
-          },
-          "currentPrice": {
-            "type": "number",
-            "description": "현재 참여 인원 기준 프론트 표시 가격. 목표 달성 전에는 price, 달성 후에는 targetPrice입니다.",
-            "example": 5000
-          },
-          "participantsToUnlock": {
-            "type": "integer",
-            "nullable": true,
-            "description": "목표 가격 해금까지 남은 참여자 수. price_unlock이 아니면 null입니다.",
-            "example": 2
-          },
-          "priceUnlocked": {
-            "type": "boolean",
-            "description": "목표 가격 달성 여부",
-            "example": false
-          },
-          "dealMessage": {
-            "type": "string",
-            "nullable": true,
-            "description": "프론트가 그대로 표시할 수 있는 거래 방식 안내 문구",
-            "example": "2명만 더 모이면 4,500원"
           }
         }
       },
@@ -1069,6 +1266,63 @@
             "type": "boolean",
             "description": "다음 페이지 존재 여부",
             "example": true
+          }
+        }
+      },
+      "PostProductSearchResponse": {
+        "type": "object",
+        "required": [
+          "query",
+          "exists",
+          "exactMatchExists",
+          "partialMatchExists",
+          "total",
+          "exactMatchCount",
+          "limit",
+          "items"
+        ],
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "서버가 공백을 정리한 검색어",
+            "example": "물티슈"
+          },
+          "exists": {
+            "type": "boolean",
+            "description": "정확히 같거나 일부 포함되는 상품명/게시글 제목이 하나라도 있는지 여부",
+            "example": true
+          },
+          "exactMatchExists": {
+            "type": "boolean",
+            "description": "상품명(productName) 또는 제목(title)이 검색어와 완전히 같은 게시글 존재 여부",
+            "example": false
+          },
+          "partialMatchExists": {
+            "type": "boolean",
+            "description": "상품명(productName) 또는 제목(title)에 검색어가 포함된 게시글 존재 여부",
+            "example": true
+          },
+          "total": {
+            "type": "integer",
+            "description": "일부 포함 검색까지 포함한 전체 검색 결과 수",
+            "example": 3
+          },
+          "exactMatchCount": {
+            "type": "integer",
+            "description": "정확히 일치하는 검색 결과 수",
+            "example": 0
+          },
+          "limit": {
+            "type": "integer",
+            "description": "items에 반환된 최대 게시글 수",
+            "example": 10
+          },
+          "items": {
+            "type": "array",
+            "description": "검색어와 유사한 게시글 목록. 카드 UI용 favoriteCount, isFavorite, isParticipant, deadlineStatus 등이 포함됩니다.",
+            "items": {
+              "$ref": "#/components/schemas/Post"
+            }
           }
         }
       },
@@ -1116,6 +1370,32 @@
                 ],
                 "example": "open"
               },
+              "pickupType": {
+                "type": "string",
+                "enum": [
+                  "custom",
+                  "damara_zone"
+                ],
+                "example": "damara_zone"
+              },
+              "pickupZoneId": {
+                "type": "string",
+                "nullable": true,
+                "example": "s2810"
+              },
+              "pickupZone": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PickupZone"
+                  }
+                ],
+                "nullable": true
+              },
+              "pickupLocation": {
+                "type": "string",
+                "nullable": true,
+                "example": "자연캠퍼스 S2810"
+              },
               "price": {
                 "type": "number",
                 "example": 5000
@@ -1126,7 +1406,6 @@
                   "pre_recruit",
                   "post_recruit"
                 ],
-                "description": "공구 A/B 타입 (pre_recruit=선모집형, post_recruit=후모집형)",
                 "example": "pre_recruit"
               },
               "groupBuyMode": {
@@ -1135,66 +1414,35 @@
                   "normal",
                   "price_unlock"
                 ],
-                "description": "거래 세부 모드 (normal=기본형, price_unlock=모이면 싸지는 공구)",
                 "example": "price_unlock"
               },
               "targetParticipants": {
                 "type": "integer",
                 "nullable": true,
-                "description": "price_unlock 목표 참여 인원. 이 인원 이상이면 목표 가격이 적용됩니다.",
                 "example": 5
               },
               "targetPrice": {
                 "type": "number",
                 "nullable": true,
-                "description": "price_unlock 목표 달성 가격",
                 "example": 4500
               },
               "currentPrice": {
                 "type": "number",
-                "description": "현재 참여 인원 기준 프론트 표시 가격. 목표 달성 전에는 price, 달성 후에는 targetPrice입니다.",
                 "example": 5000
               },
               "participantsToUnlock": {
                 "type": "integer",
                 "nullable": true,
-                "description": "목표 가격 해금까지 남은 참여자 수. price_unlock이 아니면 null입니다.",
                 "example": 2
               },
               "priceUnlocked": {
                 "type": "boolean",
-                "description": "목표 가격 달성 여부",
                 "example": false
               },
               "dealMessage": {
                 "type": "string",
                 "nullable": true,
-                "description": "프론트가 그대로 표시할 수 있는 거래 방식 안내 문구",
                 "example": "2명만 더 모이면 4,500원"
-              },
-              "pickupType": {
-                "type": "string",
-                "enum": [
-                  "custom",
-                  "damara_zone"
-                ],
-                "description": "수령 장소 선택 방식 (custom=직접 입력, damara_zone=다마라존)",
-                "example": "damara_zone"
-              },
-              "pickupZoneId": {
-                "type": "string",
-                "nullable": true,
-                "description": "다마라존 ID. pickupType=damara_zone일 때 사용합니다.",
-                "example": "s2810"
-              },
-              "pickupZone": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/PickupZone"
-                  }
-                ],
-                "nullable": true,
-                "description": "선택된 다마라존 상세 정보"
               }
             }
           }
@@ -2208,6 +2456,49 @@
             "description": "공구 A/B 타입 (pre_recruit=선모집형, post_recruit=후모집형)",
             "example": "pre_recruit"
           },
+          "groupBuyMode": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "price_unlock"
+            ],
+            "description": "거래 세부 모드 (normal=기본형, price_unlock=모이면 싸지는 공구)",
+            "example": "price_unlock"
+          },
+          "targetParticipants": {
+            "type": "integer",
+            "nullable": true,
+            "description": "price_unlock 목표 참여 인원. 이 인원 이상이면 목표 가격이 적용됩니다.",
+            "example": 5
+          },
+          "targetPrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "price_unlock 목표 달성 가격",
+            "example": 4500
+          },
+          "currentPrice": {
+            "type": "number",
+            "description": "현재 참여 인원 기준 프론트 표시 가격. 목표 달성 전에는 price, 달성 후에는 targetPrice입니다.",
+            "example": 5900
+          },
+          "participantsToUnlock": {
+            "type": "integer",
+            "nullable": true,
+            "description": "목표 가격 해금까지 남은 참여자 수. price_unlock이 아니면 null입니다.",
+            "example": 4
+          },
+          "priceUnlocked": {
+            "type": "boolean",
+            "description": "목표 가격 달성 여부",
+            "example": false
+          },
+          "dealMessage": {
+            "type": "string",
+            "nullable": true,
+            "description": "프론트가 그대로 표시할 수 있는 거래 방식 안내 문구",
+            "example": "4명만 더 모이면 4,900원"
+          },
           "tags": {
             "type": "array",
             "nullable": true,
@@ -2363,49 +2654,6 @@
             "type": "string",
             "format": "date-time",
             "description": "수정일시"
-          },
-          "groupBuyMode": {
-            "type": "string",
-            "enum": [
-              "normal",
-              "price_unlock"
-            ],
-            "description": "거래 세부 모드 (normal=기본형, price_unlock=모이면 싸지는 공구)",
-            "example": "price_unlock"
-          },
-          "targetParticipants": {
-            "type": "integer",
-            "nullable": true,
-            "description": "price_unlock 목표 참여 인원. 이 인원 이상이면 목표 가격이 적용됩니다.",
-            "example": 5
-          },
-          "targetPrice": {
-            "type": "number",
-            "nullable": true,
-            "description": "price_unlock 목표 달성 가격",
-            "example": 4500
-          },
-          "currentPrice": {
-            "type": "number",
-            "description": "현재 참여 인원 기준 프론트 표시 가격. 목표 달성 전에는 price, 달성 후에는 targetPrice입니다.",
-            "example": 5000
-          },
-          "participantsToUnlock": {
-            "type": "integer",
-            "nullable": true,
-            "description": "목표 가격 해금까지 남은 참여자 수. price_unlock이 아니면 null입니다.",
-            "example": 2
-          },
-          "priceUnlocked": {
-            "type": "boolean",
-            "description": "목표 가격 달성 여부",
-            "example": false
-          },
-          "dealMessage": {
-            "type": "string",
-            "nullable": true,
-            "description": "프론트가 그대로 표시할 수 있는 거래 방식 안내 문구",
-            "example": "2명만 더 모이면 4,500원"
           }
         }
       },
@@ -2716,179 +2964,6 @@
             "description": "필드별 오류 등 추가 세부 정보",
             "additionalProperties": true,
             "example": {}
-          }
-        }
-      },
-      "PickupZone": {
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "campus",
-          "campusLabel",
-          "detailLocation",
-          "displayName",
-          "description",
-          "isActive",
-          "sortOrder"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "다마라존 ID. 게시글 등록 시 pickupZoneId로 전달합니다.",
-            "example": "s2810"
-          },
-          "name": {
-            "type": "string",
-            "description": "짧은 장소명",
-            "example": "S2810"
-          },
-          "campus": {
-            "type": "string",
-            "enum": [
-              "humanities",
-              "natural",
-              "shared"
-            ],
-            "description": "캠퍼스 구분",
-            "example": "natural"
-          },
-          "campusLabel": {
-            "type": "string",
-            "description": "캠퍼스 표시명",
-            "example": "자연캠퍼스"
-          },
-          "building": {
-            "type": "string",
-            "nullable": true,
-            "description": "건물명",
-            "example": "S동"
-          },
-          "floor": {
-            "type": "string",
-            "nullable": true,
-            "description": "층 정보",
-            "example": "2층"
-          },
-          "detailLocation": {
-            "type": "string",
-            "description": "건물 내 상세 위치",
-            "example": "S2810"
-          },
-          "displayName": {
-            "type": "string",
-            "description": "프론트 표시용 전체 장소명",
-            "example": "자연캠퍼스 S2810"
-          },
-          "description": {
-            "type": "string",
-            "description": "장소 설명",
-            "example": "자연캠퍼스 S동 2층 S2810 앞 공식 접선지"
-          },
-          "isActive": {
-            "type": "boolean",
-            "description": "사용 가능 여부",
-            "example": true
-          },
-          "sortOrder": {
-            "type": "integer",
-            "description": "표시 순서",
-            "example": 10
-          }
-        }
-      },
-      "PostProductSearchResponse": {
-        "type": "object",
-        "required": [
-          "query",
-          "exists",
-          "exactMatchExists",
-          "partialMatchExists",
-          "total",
-          "exactMatchCount",
-          "limit",
-          "items"
-        ],
-        "properties": {
-          "query": {
-            "type": "string",
-            "description": "서버가 공백을 정리한 검색어",
-            "example": "물티슈"
-          },
-          "exists": {
-            "type": "boolean",
-            "description": "정확히 같거나 일부 포함되는 상품명/게시글 제목이 하나라도 있는지 여부",
-            "example": true
-          },
-          "exactMatchExists": {
-            "type": "boolean",
-            "description": "상품명(productName) 또는 제목(title)이 검색어와 완전히 같은 게시글 존재 여부",
-            "example": false
-          },
-          "partialMatchExists": {
-            "type": "boolean",
-            "description": "상품명(productName) 또는 제목(title)에 검색어가 포함된 게시글 존재 여부",
-            "example": true
-          },
-          "total": {
-            "type": "integer",
-            "description": "일부 포함 검색까지 포함한 전체 검색 결과 수",
-            "example": 3
-          },
-          "exactMatchCount": {
-            "type": "integer",
-            "description": "정확히 일치하는 검색 결과 수",
-            "example": 0
-          },
-          "limit": {
-            "type": "integer",
-            "description": "items에 반환된 최대 게시글 수",
-            "example": 10
-          },
-          "items": {
-            "type": "array",
-            "description": "검색어와 유사한 게시글 목록. 카드 UI용 favoriteCount, isFavorite, isParticipant, deadlineStatus 등이 포함됩니다.",
-            "items": {
-              "$ref": "#/components/schemas/Post"
-            }
-          }
-        }
-      },
-      "UserProfileImageResponse": {
-        "type": "object",
-        "required": [
-          "avatarUrl",
-          "user"
-        ],
-        "properties": {
-          "avatarUrl": {
-            "type": "string",
-            "nullable": true,
-            "description": "사용자에게 반영된 프로필 이미지 URL. null이면 이미지 없음",
-            "example": "/uploads/images/abc123.png"
-          },
-          "image": {
-            "type": "object",
-            "nullable": true,
-            "description": "파일 업로드 요청에서 생성된 이미지 정보",
-            "properties": {
-              "imageUrl": {
-                "type": "string",
-                "example": "/uploads/images/abc123.png"
-              },
-              "url": {
-                "type": "string",
-                "description": "기존 클라이언트 호환용 URL",
-                "example": "/uploads/images/abc123.png"
-              },
-              "filename": {
-                "type": "string",
-                "example": "abc123.png"
-              }
-            }
-          },
-          "user": {
-            "$ref": "#/components/schemas/User"
           }
         }
       }
@@ -3532,6 +3607,86 @@
         "description": "메시지 삭제"
       }
     },
+    "/api/auth/email-verifications/send": {
+      "post": {
+        "summary": "회원가입 이메일 인증번호 발송",
+        "tags": [
+          "Email Verifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendEmailVerificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "발송 요청 접수",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendEmailVerificationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "이메일 형식 오류"
+          },
+          "429": {
+            "description": "발송 횟수 제한"
+          },
+          "502": {
+            "description": "이메일 전송 실패"
+          }
+        },
+        "description": "회원가입 이메일 인증번호 발송"
+      }
+    },
+    "/api/auth/email-verifications/verify": {
+      "post": {
+        "summary": "회원가입 이메일 인증번호 확인",
+        "tags": [
+          "Email Verifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailVerificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "인증 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyEmailVerificationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "인증 실패"
+          },
+          "410": {
+            "description": "인증번호 만료"
+          },
+          "423": {
+            "description": "인증 시도 횟수 초과"
+          }
+        },
+        "description": "회원가입 이메일 인증번호 확인"
+      }
+    },
     "/api/faqs": {
       "get": {
         "summary": "FAQ 목록 조회",
@@ -3715,6 +3870,7 @@
     "/api/notifications": {
       "get": {
         "summary": "알림 목록 조회",
+        "description": "사용자의 알림 목록을 최신순으로 조회합니다. 공동구매에 새 참여자가 생기면 작성자에게 new_participant 타입 알림이 생성됩니다.",
         "tags": [
           "Notifications"
         ],
@@ -3804,8 +3960,7 @@
               }
             }
           }
-        },
-        "description": "사용자의 알림 목록을 최신순으로 조회합니다. 공동구매에 새 참여자가 생기면 작성자에게 new_participant 타입 알림이 생성됩니다."
+        }
       }
     },
     "/api/notifications/unread-count": {
@@ -4074,6 +4229,117 @@
         "description": "알림 삭제"
       }
     },
+    "/api/pickup-zones": {
+      "get": {
+        "summary": "다마라존 목록 조회",
+        "description": "게시글 등록 화면에서 선택할 수 있는 공식 접선지 목록을 조회합니다.",
+        "tags": [
+          "PickupZones"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "campus",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "humanities",
+                "natural",
+                "shared"
+              ]
+            },
+            "description": "캠퍼스 필터"
+          },
+          {
+            "in": "query",
+            "name": "keyword",
+            "schema": {
+              "type": "string"
+            },
+            "description": "장소명, 건물명, 설명 검색어. q 쿼리도 같은 의미로 사용할 수 있습니다."
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string"
+            },
+            "description": "keyword와 같은 의미의 검색어 alias입니다."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "다마라존 목록 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PickupZone"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 4
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pickup-zones/{id}": {
+      "get": {
+        "summary": "다마라존 상세 조회",
+        "description": "다마라존 ID로 공식 접선지 상세 정보를 조회합니다.",
+        "tags": [
+          "PickupZones"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "다마라존 ID",
+            "example": "s2810"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "다마라존 상세 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PickupZone"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "다마라존을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/posts": {
       "get": {
         "summary": "홈 피드 상품 목록 조회 (페이징, 검색, 필터, 정렬 가능)",
@@ -4286,10 +4552,10 @@
                       },
                       "pickupLocation": {
                         "type": "string",
+                        "nullable": true,
                         "maxLength": 200,
                         "example": "명지대학교 정문",
-                        "description": "직접 입력 장소. pickupType=custom일 때 필요하며 damara_zone이면 서버가 다마라존 표시명으로 채움",
-                        "nullable": true
+                        "description": "직접 입력 장소. pickupType=custom일 때 필요하며 damara_zone이면 서버가 다마라존 표시명으로 채움"
                       },
                       "pickupDate": {
                         "type": "string",
@@ -4322,8 +4588,29 @@
                           "pre_recruit",
                           "post_recruit"
                         ],
-                        "description": "공구 A/B 타입 (pre_recruit=선모집형, post_recruit=후모집형)",
-                        "example": "pre_recruit"
+                        "example": "pre_recruit",
+                        "description": "공구 A/B 타입 (pre_recruit=선모집형, post_recruit=후모집형)"
+                      },
+                      "groupBuyMode": {
+                        "type": "string",
+                        "enum": [
+                          "normal",
+                          "price_unlock"
+                        ],
+                        "example": "price_unlock",
+                        "description": "거래 세부 모드 (normal=기본형, price_unlock=모이면 싸지는 공구)"
+                      },
+                      "targetParticipants": {
+                        "type": "integer",
+                        "nullable": true,
+                        "example": 5,
+                        "description": "price_unlock 목표 참여 인원"
+                      },
+                      "targetPrice": {
+                        "type": "number",
+                        "nullable": true,
+                        "example": 22500,
+                        "description": "price_unlock 목표 달성 가격"
                       },
                       "tags": {
                         "type": "array",
@@ -4367,27 +4654,6 @@
                           "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400"
                         ],
                         "description": "이미지 URL 배열 (선택사항)"
-                      },
-                      "groupBuyMode": {
-                        "type": "string",
-                        "enum": [
-                          "normal",
-                          "price_unlock"
-                        ],
-                        "description": "거래 세부 모드 (normal=기본형, price_unlock=모이면 싸지는 공구)",
-                        "example": "price_unlock"
-                      },
-                      "targetParticipants": {
-                        "type": "integer",
-                        "nullable": true,
-                        "example": 5,
-                        "description": "price_unlock 목표 참여 인원"
-                      },
-                      "targetPrice": {
-                        "type": "number",
-                        "nullable": true,
-                        "example": 4500,
-                        "description": "price_unlock 목표 달성 가격"
                       }
                     }
                   }
@@ -4402,12 +4668,16 @@
                   "price": 25000,
                   "minParticipants": 2,
                   "deadline": "2025-11-27T23:59:59.000Z",
-                  "pickupLocation": "명지대학교 정문",
+                  "pickupType": "damara_zone",
+                  "pickupZoneId": "s2810",
                   "pickupDate": "2026-06-17",
                   "pickupStartTime": "17:00",
                   "pickupEndTime": "19:00",
                   "pickupGuide": "정문 앞 파란 우산 근처에서 수령해 주세요.",
-                  "groupBuyType": "campus_pickup",
+                  "groupBuyType": "pre_recruit",
+                  "groupBuyMode": "price_unlock",
+                  "targetParticipants": 5,
+                  "targetPrice": 22500,
                   "tags": [
                     "대용량",
                     "생활용품"
@@ -4441,6 +4711,61 @@
           }
         },
         "description": "상품 등록"
+      }
+    },
+    "/api/posts/product-search": {
+      "get": {
+        "summary": "상품명 기반 게시글 존재 여부 검색",
+        "description": "상품명 또는 게시글 제목에 같은/비슷한 공동구매가 있는지 확인합니다. 등록 화면에서 중복 공구 확인이나 검색 자동완성에 사용할 수 있습니다.",
+        "tags": [
+          "Posts"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "productName",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "검색할 상품명. 앞뒤 공백과 연속 공백은 서버에서 정리합니다. q 또는 keyword도 같은 의미로 사용할 수 있습니다.",
+            "example": "물티슈"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "maximum": 20
+            },
+            "description": "함께 반환할 유사 게시글 개수. 1~20 범위로 보정됩니다."
+          },
+          {
+            "in": "header",
+            "name": "x-user-id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "현재 사용자 UUID. 전달하면 items의 isFavorite, isParticipant, isOwner를 계산합니다."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "상품명 검색 성공. exactMatchExists는 상품명/제목이 완전히 같은 게시글 존재 여부, partialMatchExists는 일부 포함 검색 결과 존재 여부입니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostProductSearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "상품명 누락"
+          }
+        }
       }
     },
     "/api/posts/student/{studentId}": {
@@ -4556,20 +4881,15 @@
                           "custom",
                           "damara_zone"
                         ],
-                        "nullable": true,
-                        "example": "damara_zone",
-                        "description": "수령 장소 선택 방식 (custom=직접 입력, damara_zone=다마라존)"
+                        "nullable": true
                       },
                       "pickupZoneId": {
                         "type": "string",
-                        "nullable": true,
-                        "example": "s2810",
-                        "description": "다마라존 ID. pickupType=damara_zone일 때 사용"
+                        "nullable": true
                       },
                       "pickupLocation": {
                         "type": "string",
-                        "nullable": true,
-                        "description": "직접 입력 장소. pickupType=custom일 때 필요하며 damara_zone이면 서버가 다마라존 표시명으로 채움"
+                        "nullable": true
                       },
                       "pickupDate": {
                         "type": "string",
@@ -4594,8 +4914,23 @@
                           "pre_recruit",
                           "post_recruit"
                         ],
-                        "description": "공구 A/B 타입 (pre_recruit=선모집형, post_recruit=후모집형)",
-                        "example": "pre_recruit"
+                        "nullable": true
+                      },
+                      "groupBuyMode": {
+                        "type": "string",
+                        "enum": [
+                          "normal",
+                          "price_unlock"
+                        ],
+                        "nullable": true
+                      },
+                      "targetParticipants": {
+                        "type": "integer",
+                        "nullable": true
+                      },
+                      "targetPrice": {
+                        "type": "number",
+                        "nullable": true
                       },
                       "tags": {
                         "type": "array",
@@ -4626,30 +4961,8 @@
                         "items": {
                           "type": "string"
                         }
-                      },
-                      "groupBuyMode": {
-                        "type": "string",
-                        "enum": [
-                          "normal",
-                          "price_unlock"
-                        ],
-                        "description": "거래 세부 모드 (normal=기본형, price_unlock=모이면 싸지는 공구)",
-                        "example": "price_unlock"
-                      },
-                      "targetParticipants": {
-                        "type": "integer",
-                        "nullable": true,
-                        "example": 5,
-                        "description": "price_unlock 목표 참여 인원"
-                      },
-                      "targetPrice": {
-                        "type": "number",
-                        "nullable": true,
-                        "example": 4500,
-                        "description": "price_unlock 목표 달성 가격"
                       }
-                    },
-                    "required": []
+                    }
                   }
                 }
               },
@@ -5965,14 +6278,15 @@
                       "email",
                       "passwordHash",
                       "nickname",
-                      "studentId"
+                      "studentId",
+                      "emailVerificationToken"
                     ],
                     "properties": {
                       "email": {
                         "type": "string",
                         "format": "email",
-                        "example": "test@mju.ac.kr",
-                        "description": "명지대학교 이메일 형식 권장"
+                        "example": "user@example.com",
+                        "description": "인증을 완료한 이메일 주소"
                       },
                       "passwordHash": {
                         "type": "string",
@@ -6002,6 +6316,11 @@
                         "format": "uri",
                         "example": "https://example.com/avatar.jpg",
                         "description": "프로필 이미지 URL (선택사항)"
+                      },
+                      "emailVerificationToken": {
+                        "type": "string",
+                        "example": "opaque-one-time-token",
+                        "description": "이메일 인증 성공 후 발급받은 일회성 토큰"
                       }
                     }
                   }
@@ -6009,12 +6328,13 @@
               },
               "example": {
                 "user": {
-                  "email": "test@mju.ac.kr",
+                  "email": "user@example.com",
                   "passwordHash": "mypassword123",
                   "nickname": "홍길동",
                   "studentId": "20241234",
                   "department": "컴퓨터공학과",
-                  "avatarUrl": "http://3.38.145.117:3000/uploads/images/abc123.png"
+                  "avatarUrl": "http://3.38.145.117:3000/uploads/images/abc123.png",
+                  "emailVerificationToken": "opaque-one-time-token"
                 }
               }
             }
@@ -6032,7 +6352,7 @@
             }
           },
           "400": {
-            "description": "유효성 검증 실패 또는 중복된 이메일/학번",
+            "description": "유효성 검증 실패",
             "content": {
               "application/json": {
                 "schema": {
@@ -6040,6 +6360,15 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "이메일 인증 토큰 누락, 불일치 또는 변조"
+          },
+          "409": {
+            "description": "중복된 이메일 또는 학번"
+          },
+          "410": {
+            "description": "이메일 인증 토큰 만료"
           }
         },
         "description": "회원가입"
@@ -6628,318 +6957,6 @@
         "description": "사용자 신뢰 이벤트 이력 조회"
       }
     },
-    "/api/users/{id}": {
-      "get": {
-        "summary": "사용자 정보 조회",
-        "tags": [
-          "Users"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "description": "사용자 UUID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "사용자 정보 조회 성공",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "사용자를 찾을 수 없음"
-          }
-        },
-        "description": "사용자 정보 조회"
-      },
-      "put": {
-        "summary": "회원 정보 수정",
-        "tags": [
-          "Users"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "description": "사용자 UUID"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "user"
-                ],
-                "properties": {
-                  "user": {
-                    "type": "object",
-                    "properties": {
-                      "email": {
-                        "type": "string",
-                        "format": "email"
-                      },
-                      "passwordHash": {
-                        "type": "string",
-                        "minLength": 8,
-                        "format": "password"
-                      },
-                      "nickname": {
-                        "type": "string",
-                        "minLength": 2
-                      },
-                      "studentId": {
-                        "type": "string"
-                      },
-                      "department": {
-                        "type": "string"
-                      },
-                      "avatarUrl": {
-                        "type": "string",
-                        "format": "uri"
-                      }
-                    }
-                  }
-                }
-              },
-              "example": {
-                "user": {
-                  "nickname": "수정된닉네임",
-                  "department": "수정된학과",
-                  "avatarUrl": "http://3.38.145.117:3000/uploads/images/abc123.png"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "수정 성공",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "사용자를 찾을 수 없음"
-          }
-        },
-        "description": "회원 정보 수정"
-      },
-      "delete": {
-        "summary": "회원 삭제",
-        "tags": [
-          "Users"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "사용자 UUID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "삭제 성공"
-          },
-          "404": {
-            "description": "사용자를 찾을 수 없음"
-          }
-        },
-        "description": "회원 삭제"
-      }
-    },
-    "/api/pickup-zones": {
-      "get": {
-        "summary": "다마라존 목록 조회",
-        "description": "게시글 등록 화면에서 선택할 수 있는 공식 접선지 목록을 조회합니다.",
-        "tags": [
-          "PickupZones"
-        ],
-        "parameters": [
-          {
-            "in": "query",
-            "name": "campus",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "humanities",
-                "natural",
-                "shared"
-              ]
-            },
-            "description": "캠퍼스 필터"
-          },
-          {
-            "in": "query",
-            "name": "keyword",
-            "schema": {
-              "type": "string"
-            },
-            "description": "장소명, 건물명, 설명 검색어. q 쿼리도 같은 의미로 사용할 수 있습니다."
-          },
-          {
-            "in": "query",
-            "name": "q",
-            "schema": {
-              "type": "string"
-            },
-            "description": "keyword와 같은 의미의 검색어 alias입니다."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "다마라존 목록 조회 성공",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "items",
-                    "total"
-                  ],
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/PickupZone"
-                      }
-                    },
-                    "total": {
-                      "type": "integer",
-                      "example": 4
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/pickup-zones/{id}": {
-      "get": {
-        "summary": "다마라존 상세 조회",
-        "description": "다마라존 ID로 공식 접선지 상세 정보를 조회합니다.",
-        "tags": [
-          "PickupZones"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "다마라존 ID",
-            "example": "s2810"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "다마라존 상세 조회 성공",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PickupZone"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "다마라존을 찾을 수 없음",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/posts/product-search": {
-      "get": {
-        "summary": "상품명 기반 게시글 존재 여부 검색",
-        "description": "상품명 또는 게시글 제목에 같은/비슷한 공동구매가 있는지 확인합니다. 등록 화면에서 중복 공구 확인이나 검색 자동완성에 사용할 수 있습니다.",
-        "tags": [
-          "Posts"
-        ],
-        "parameters": [
-          {
-            "in": "query",
-            "name": "productName",
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "description": "검색할 상품명. 앞뒤 공백과 연속 공백은 서버에서 정리합니다. q 또는 keyword도 같은 의미로 사용할 수 있습니다.",
-            "example": "물티슈"
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "schema": {
-              "type": "integer",
-              "default": 10,
-              "maximum": 20
-            },
-            "description": "함께 반환할 유사 게시글 개수. 1~20 범위로 보정됩니다."
-          },
-          {
-            "in": "header",
-            "name": "x-user-id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "description": "현재 사용자 UUID. 전달하면 items의 isFavorite, isParticipant, isOwner를 계산합니다."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "상품명 검색 성공. exactMatchExists는 상품명/제목이 완전히 같은 게시글 존재 여부, partialMatchExists는 일부 포함 검색 결과 존재 여부입니다.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PostProductSearchResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "상품명 누락"
-          }
-        }
-      }
-    },
     "/api/users/{id}/profile-image": {
       "post": {
         "summary": "프로필 이미지 업로드 및 설정",
@@ -7095,6 +7112,152 @@
             }
           }
         }
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "summary": "사용자 정보 조회",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "사용자 UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "사용자 정보 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "사용자를 찾을 수 없음"
+          }
+        },
+        "description": "사용자 정보 조회"
+      },
+      "put": {
+        "summary": "회원 정보 수정",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "사용자 UUID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user"
+                ],
+                "properties": {
+                  "user": {
+                    "type": "object",
+                    "properties": {
+                      "email": {
+                        "type": "string",
+                        "format": "email"
+                      },
+                      "passwordHash": {
+                        "type": "string",
+                        "minLength": 8,
+                        "format": "password"
+                      },
+                      "nickname": {
+                        "type": "string",
+                        "minLength": 2
+                      },
+                      "studentId": {
+                        "type": "string"
+                      },
+                      "department": {
+                        "type": "string"
+                      },
+                      "avatarUrl": {
+                        "type": "string",
+                        "format": "uri"
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "user": {
+                  "nickname": "수정된닉네임",
+                  "department": "수정된학과",
+                  "avatarUrl": "http://3.38.145.117:3000/uploads/images/abc123.png"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "사용자를 찾을 수 없음"
+          }
+        },
+        "description": "회원 정보 수정"
+      },
+      "delete": {
+        "summary": "회원 삭제",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "사용자 UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "삭제 성공"
+          },
+          "404": {
+            "description": "사용자를 찾을 수 없음"
+          }
+        },
+        "description": "회원 삭제"
       }
     }
   }

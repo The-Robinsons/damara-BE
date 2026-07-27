@@ -6,3 +6,4 @@ config.js
 /generated/prisma
 .env
 config/.env.*
+!config/.env.example

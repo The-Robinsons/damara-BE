@@ -4,10 +4,14 @@ import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../db";
 import UserModel from "./User";
 import PostModel from "./Post";
+import TradeReviewModel from "./TradeReview";
 
 export const TRUST_EVENT_TYPES = [
   "post_completed_author",
   "post_completed_participant",
+  "participant_received",
+  "post_review_aggregate_author",
+  "trade_review_participant",
   "post_cancelled_by_author",
   "post_deleted_by_author",
   "participant_cancelled",
@@ -29,13 +33,31 @@ export interface TrustEventAttributes {
   nextScore: number;
   reason: string | null;
   metadata: Record<string, unknown> | null;
+  sourceReviewId: string | null;
+  policyVersion: string;
+  effectiveScoreChange: number;
+  occurredAt: Date;
+  expiresAt: Date | null;
+  idempotencyKey: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export type TrustEventCreationAttributes = Optional<
   TrustEventAttributes,
-  "id" | "postId" | "actorUserId" | "reason" | "metadata" | "createdAt" | "updatedAt"
+  | "id"
+  | "postId"
+  | "actorUserId"
+  | "reason"
+  | "metadata"
+  | "sourceReviewId"
+  | "policyVersion"
+  | "effectiveScoreChange"
+  | "occurredAt"
+  | "expiresAt"
+  | "idempotencyKey"
+  | "createdAt"
+  | "updatedAt"
 >;
 
 export class TrustEventModel
@@ -52,6 +74,12 @@ export class TrustEventModel
   public nextScore!: number;
   public reason!: string | null;
   public metadata!: Record<string, unknown> | null;
+  public sourceReviewId!: string | null;
+  public policyVersion!: string;
+  public effectiveScoreChange!: number;
+  public occurredAt!: Date;
+  public expiresAt!: Date | null;
+  public idempotencyKey!: string | null;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -121,6 +149,42 @@ TrustEventModel.init(
       type: DataTypes.JSON,
       allowNull: true,
     },
+    sourceReviewId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      field: "source_review_id",
+      references: { model: TradeReviewModel, key: "id" },
+      onDelete: "SET NULL",
+    },
+    policyVersion: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      defaultValue: "trust-v1",
+      field: "policy_version",
+    },
+    effectiveScoreChange: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      field: "effective_score_change",
+    },
+    occurredAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+      field: "occurred_at",
+    },
+    expiresAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "expires_at",
+    },
+    idempotencyKey: {
+      type: DataTypes.STRING(200),
+      allowNull: true,
+      unique: true,
+      field: "idempotency_key",
+    },
   },
   {
     sequelize,
@@ -137,6 +201,7 @@ TrustEventModel.init(
       {
         fields: ["type"],
       },
+      { fields: ["source_review_id"] },
     ],
   }
 );
@@ -164,6 +229,15 @@ PostModel.hasMany(TrustEventModel, {
 TrustEventModel.belongsTo(PostModel, {
   foreignKey: "postId",
   as: "post",
+});
+
+TradeReviewModel.hasMany(TrustEventModel, {
+  foreignKey: "sourceReviewId",
+  as: "trustEvents",
+});
+TrustEventModel.belongsTo(TradeReviewModel, {
+  foreignKey: "sourceReviewId",
+  as: "sourceReview",
 });
 
 export default TrustEventModel;

@@ -23,6 +23,7 @@ export interface PostParticipantAttributes {
   postId: string; // posts.id와 외래키 관계
   userId: string; // users.id와 외래키 관계
   participantStatus: ParticipantStatus; // 참여자별 진행 상태
+  receivedAt: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -32,7 +33,7 @@ export interface PostParticipantAttributes {
  */
 export type PostParticipantCreationAttributes = Optional<
   PostParticipantAttributes,
-  "id" | "participantStatus" | "createdAt" | "updatedAt"
+  "id" | "participantStatus" | "receivedAt" | "createdAt" | "updatedAt"
 >;
 
 /**
@@ -46,6 +47,7 @@ export class PostParticipantModel
   public postId!: string;
   public userId!: string;
   public participantStatus!: ParticipantStatus;
+  public receivedAt!: Date | null;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -87,6 +89,12 @@ PostParticipantModel.init(
       defaultValue: "participating",
       field: "participant_status",
     },
+    receivedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+      field: "received_at",
+    },
   },
   {
     sequelize,
@@ -97,6 +105,9 @@ PostParticipantModel.init(
       {
         unique: true,
         fields: ["post_id", "user_id"], // 같은 사용자가 같은 게시글에 중복 참여 방지
+      },
+      {
+        fields: ["participant_status", "received_at"],
       },
     ],
   }

@@ -16,6 +16,39 @@ DB 구조가 바뀌면 다음 내용을 기록한다.
 6. API 응답 영향
 7. 배포 시 마이그레이션 주의점
 
+## 2026-08-05 - 신뢰학점 2.0 상호평가 구조 추가
+
+### 변경 요약
+
+거래 당사자 간 블라인드 상호평가와 중복 없는 학점 반영을 위해 `trade_reviews` 테이블을 추가하고, 수령 시각 및 학점 이벤트의 정책·멱등성 정보를 저장하도록 기존 테이블을 확장했다.
+
+### 신규 테이블
+
+```text
+trade_reviews
+```
+
+주요 제약은 `unique(post_id, reviewer_id, reviewee_id)`이다. 모집자와 참여자만 서로 평가할 수 있으며 평가 상태, 공개 시각, 만료 시각, 점수 적용 시각과 정책 버전을 저장한다.
+
+### 변경 테이블
+
+```text
+post_participants
+- received_at DATETIME nullable
+- index(participant_status, received_at)
+
+trust_events
+- source_review_id UUID nullable, trade_reviews.id FK, on delete SET NULL
+- policy_version STRING(50) not null
+- effective_score_change INTEGER not null
+- occurred_at DATETIME not null
+- expires_at DATETIME nullable
+- idempotency_key STRING(200) nullable unique
+- type enum에 participant_received, post_review_aggregate_author, trade_review_participant 추가
+```
+
+현재 프로젝트의 배포 방식에 따라 Sequelize `sync({ alter: true })`가 반영한다. 운영 데이터가 큰 환경에서는 배포 전에 별도 마이그레이션으로 분리하는 것을 권장한다.
+
 ## 2026-07-24 - 이메일 인증 요청 테이블 추가
 
 ### 변경 요약

@@ -1,537 +1,310 @@
-# Trust Score & Trust Grade
+# 신뢰학점 및 상호평가 기능 개발 보고서
 
-## 1. 목적
-
-DAMARA는 대학교 내부 공동구매 서비스이므로, 사용자에게 노출되는 신뢰도를 학교 맥락에 맞는 **신뢰학점**으로 표현한다.
-
-다만 백엔드 내부에서는 계산 안정성과 정책 확장성을 위해 기존 `trustScore`를 유지한다.
+## 1. 작업 시점
 
 ```text
-내부 계산값: trustScore 0~100
-외부 표시값: trustGrade 2.5~4.5
-기본값: trustScore 50 = trustGrade 3.5
+2026-08-05
+브랜치: feature/trust-score-v2-backend
+정책 버전: trust-v2
+관련 커밋: 커밋 전
 ```
 
-이번 브랜치의 목표는 신뢰도를 단순 숫자에서 이벤트 기반 정책으로 확장하고, 사용자-facing 표현을 “신뢰학점”으로 리팩토링하는 것이다.
-
-현재 브랜치:
+## 2. 문제 배경
 
 ```text
-feature/trust-safety-filtering
+기존 문제:
+거래 완료와 취소만으로 신뢰점수가 변해 실제 거래 상대가 경험한 매너를 반영하기 어려웠다.
+모집자는 참여자가 여러 명이므로 일대일 거래와 같은 방식으로 점수를 적용하면 모집 규모에 따라 점수가 과도하게 증가할 수 있었다.
+
+사용자/운영자/프론트엔드 관점의 불편:
+거래 상대를 평가하거나 받은 평가를 요약해서 확인할 API와 저장 구조가 없었다.
+같은 완료·취소 요청이 재시도될 때 점수가 중복 반영될 가능성도 있었다.
+
+이번 작업으로 해결하려는 것:
+수령이 확인된 모집자와 참여자가 서로 평가할 수 있게 한다.
+모집 단위 상한, 평가 공개 시점, 취소 단계별 감점, 중복 반영 방지 기준을 함께 적용한다.
 ```
 
-## 2. 왜 학점 컨셉인가
-
-온도 방식도 가능하지만, DAMARA는 학교 구성원 기반 공동구매 서비스다. 따라서 학점 컨셉은 서비스 맥락과 더 잘 맞는다.
+## 3. 기획 방향
 
 ```text
-일반 중고거래 서비스
-= 매너온도 같은 생활형 표현이 자연스러움
-
-대학교 내부 공동구매 서비스
-= 신뢰학점 같은 캠퍼스 맥락 표현이 자연스러움
-```
-
-다만 실제 성적처럼 보이면 사용자가 부담을 느낄 수 있으므로, 명칭은 단순 “학점”이 아니라 **신뢰학점**으로 사용한다.
-
-## 3. 핵심 설계
-
-현재 구조는 다음과 같다.
-
-```text
-사용자 행동
-  -> PostService / PostParticipantService
-  -> TrustService
-  -> users.trust_score 업데이트
-  -> trust_events 이력 저장
-  -> API 응답에서 trustGrade 계산
-```
-
-역할 분리는 다음과 같다.
-
-```text
-UserService
-= 사용자 생성, 조회, 로그인 같은 사용자 기본 로직 담당
-
-TrustService
-= 신뢰 정책, 점수 계산, 신뢰학점 변환, 점수 변경 이력 저장 담당
-```
-
-앞으로 신뢰도를 변경하는 기능은 `users.trust_score`를 직접 수정하지 않고 `TrustService`를 거쳐야 한다.
-
-## 4. 내부값과 외부값
-
-### 내부값: trustScore
-
-`trustScore`는 DB에 저장되는 내부 정책 값이다.
-
-```text
-컬럼: users.trust_score
+내부 계산값: users.trust_score
 범위: 0~100
-회원가입 기본값: 50
-```
+기본값: 50
 
-내부 정책은 정수 점수로 유지한다.
-
-이유:
-
-```text
-1. +10, -5 같은 정책 계산이 명확하다.
-2. 소수점 누적 오차를 피할 수 있다.
-3. 추후 온도, 학점, 등급 등 다른 표시 방식으로 바꾸기 쉽다.
-4. 기존 DB 구조와 호환된다.
-```
-
-### 외부값: trustGrade
-
-`trustGrade`는 사용자에게 보여주는 신뢰학점이다.
-
-```text
-API 응답 필드: trustGrade
+외부 표시값: trustGrade
 범위: 2.5~4.5
 기본값: 3.5
-소수점: 첫째 자리까지 표시
-```
+표시 단위: 소수점 첫째 자리
 
-`trustGrade`는 DB에 저장하지 않고, `trustScore`를 기반으로 계산한다.
-
-## 5. 신뢰학점 변환식
-
-변환 공식은 다음과 같다.
-
-```text
+변환식:
 trustGrade = 2.5 + (trustScore / 100) * 2.0
 ```
 
-같은 의미로 쓰면:
+정상 거래와 상호평가 점수:
+
+| 대상 | 행동점수 | 평가점수 | 완료 거래 합계 |
+| --- | ---: | ---: | ---: |
+| 모집자 | 모집 완료 +5 | 참여자 평가 합산 -10~+5 | -5~+10점 = 학점 -0.1~+0.2 |
+| 참여자 | 수령 완료 +4 | 모집자 평가 -2~+1 | +2~+5점 = 학점 +0.04~+0.1 |
+
+평가 선택값:
 
 ```text
-trustGrade = 3.5 + (trustScore - 50) * 0.02
+positive = +1
+neutral = 0
+negative = -2
 ```
 
-예시:
+모집자는 참여자가 여러 명이어도 게시글 단위로 평가점수를 한 번만 합산한다. 원점수 합계가 범위를 벗어나면 `-10~+5`로 보정한다. 참여자는 모집자가 각 수령 완료 참여자를 개별 평가하며 거래별 점수를 적용한다.
 
-| trustScore | trustGrade | 의미 |
-| ---: | ---: | --- |
-| 0 | 2.5 | 매우 낮은 신뢰 |
-| 25 | 3.0 | 주의 필요 |
-| 50 | 3.5 | 기본 신뢰 |
-| 75 | 4.0 | 좋은 신뢰 |
-| 100 | 4.5 | 매우 높은 신뢰 |
+취소 감점:
 
-코드 기준:
+| 주체와 시점 | trustScore 변경 |
+| --- | ---: |
+| 참여자가 없는 모집글 취소·삭제 | 0 |
+| 참여자가 있고 수령예정 전 모집자 취소 | -2 |
+| 수령예정 또는 수령완료 참여자가 있는 모집자 취소 | -5 |
+| 참여중 상태에서 수령까지 24시간 초과 남았을 때 취소 | 0 |
+| 참여중 상태에서 수령까지 24시간 이내일 때 취소 | -1 |
+| 입금대기 상태에서 참여 취소 | -3 |
+| 수령예정 상태에서 참여 취소 | -4 |
 
-```ts
-trustGrade = Number((2.5 + (trustScore / 100) * 2).toFixed(1));
-```
+수령 시각은 `pickupDate + pickupStartTime`을 한국 시간으로 계산하고, 값이 없으면 게시글 마감 시각을 사용한다. 수령완료 상태에서는 참여 취소할 수 없다.
 
-## 6. 점수 범위 보정
-
-`trustScore`는 0점에서 100점 사이로 제한한다.
+## 4. 기존 구현과 비교
 
 ```text
-최소 점수: 0
-최대 점수: 100
-회원가입 기본 점수: 50
+기존 구현:
+모집 완료, 모집 취소, 참여 취소 같은 행동 이벤트만 trust_events에 기록했다.
+상호평가 저장소와 평가 API가 없었다.
+신뢰점수 반영 요청을 유일하게 식별하는 키가 없었다.
+
+변경 후 구현:
+완료 행동점수와 상호평가 점수를 분리해서 기록한다.
+수령완료 시각부터 7일 동안 모집자와 참여자가 서로 평가할 수 있다.
+상대 평가가 모두 제출되면 즉시 공개하고, 한쪽만 제출하면 평가 기한 만료 후 공개한다.
+모든 점수 이벤트에 멱등 키를 적용해 같은 요청의 재시도로 점수가 중복 반영되지 않게 한다.
+
+호환성:
+기존 trustScore와 trustGrade 필드 및 신뢰 이벤트 조회 API는 유지한다.
+기존 신뢰 이벤트 타입도 이력 호환을 위해 유지한다.
 ```
 
-점수 변경 후 0보다 작아지면 0으로 보정하고, 100보다 커지면 100으로 보정한다.
-
-예시:
+평가 규칙:
 
 ```text
-현재 97점인 사용자가 +10 이벤트를 받음
-계산상 107점
-최종 저장 점수는 100점
-표시 신뢰학점은 4.5
+평가 자격:
+게시글이 completed이고 참여자의 participantStatus가 received여야 한다.
+모집자와 해당 참여자 사이의 평가만 허용한다.
+본인 평가와 참여자 간 평가는 허용하지 않는다.
 
-현재 2점인 사용자가 -5 이벤트를 받음
-계산상 -3점
-최종 저장 점수는 0점
-표시 신뢰학점은 2.5
+평가 기간:
+post_participants.received_at부터 7일
+
+태그:
+positive와 negative는 역할에 맞는 태그를 1~5개 선택한다.
+neutral은 태그를 보내지 않는다.
+허용 태그는 평가 자격 조회 API 응답을 사용한다.
+
+공개:
+상호 제출 완료 시 두 평가를 즉시 published로 변경한다.
+상호 제출이 없으면 expiresAt이 지난 pending 평가를 자동 공개한다.
+공개 전 pending 평가만 수정할 수 있다.
 ```
 
-## 7. 현재 구현된 정책
-
-현재 구현된 정책은 `src/services/TrustService.ts`의 `TRUST_POLICY`를 기준으로 한다.
-
-| 이벤트 | 대상자 | trustScore 변화 | trustGrade 변화 | 적용 시점 |
-| --- | --- | ---: | ---: | --- |
-| 공동구매 거래 완료 | 작성자 | +10 | +0.2 | 게시글 상태가 `completed`가 될 때 |
-| 공동구매 거래 완료 | 참여자 | +5 | +0.1 | 게시글 상태가 `completed`가 될 때 |
-| 공동구매 취소 | 작성자 | -5 | -0.1 | 게시글 상태가 `cancelled`가 될 때 |
-| 공동구매 게시글 삭제 | 작성자 | -5 | -0.1 | 게시글 삭제 시 |
-| 공동구매 참여 취소 | 참여자 | -3 | -0.1 미만 | 참여자가 참여를 취소할 때 |
-| 노쇼 확정 | 대상 참여자 | -10 | -0.2 | 아직 API 미구현, 정책 상수만 예약 |
-
-주의:
+참여 상태는 아래 순서로만 변경한다.
 
 ```text
-trustGrade는 소수점 첫째 자리까지만 표시하므로,
--3점 같은 작은 변화는 표시값에서 바로 티가 나지 않을 수 있다.
-하지만 내부 trustScore와 trust_events에는 정확히 기록된다.
+participating -> payment_pending -> pickup_ready -> received
+
+모집자: participating부터 pickup_ready까지 진행 처리
+참여자 본인: pickup_ready에서 received로 수령 확정
+같은 상태 재요청: 허용
+단계 생략 또는 역방향 변경: 거부
 ```
 
-## 8. 상태값 기준
-
-게시글 상태값의 의미는 다음처럼 해석한다.
-
-| 상태 | 의미 | 점수 변경 여부 |
-| --- | --- | --- |
-| `open` | 모집중 | 없음 |
-| `closed` | 모집 마감 | 없음 |
-| `in_progress` | 거래 진행중 | 없음 |
-| `completed` | 거래 완료 | 작성자 +10, 참여자 +5 |
-| `cancelled` | 거래 취소 | 작성자 -5 |
-
-중요한 기준:
+## 5. 코드 변경 요약
 
 ```text
-closed는 거래 완료가 아니다.
-closed는 모집 마감 상태다.
-따라서 closed에서는 신뢰학점 보상을 주지 않는다.
+주요 변경 파일:
+src/services/TrustService.ts
+src/services/TradeReviewService.ts
+src/services/PostService.ts
+src/models/TrustEvent.ts
+src/models/TradeReview.ts
+src/models/PostParticipant.ts
+src/repos/TradeReviewRepo.ts
+src/controllers/trade-review.controller.ts
+src/routes/reviews/ReviewRoutes.ts
+src/routes/posts/PostRoutes.ts
+src/routes/users/UserRoutes.ts
+src/jobs/TradeReviewPublicationJob.ts
+
+핵심 로직:
+TrustService가 사용자 row를 잠근 뒤 0~100 범위로 점수를 반영한다.
+idempotencyKey가 같은 이벤트는 기존 결과를 반환한다.
+실제로 반영된 점수는 scoreChange와 effectiveScoreChange에 기록한다.
+TradeReviewService가 평가 자격, 역할별 태그, 블라인드 공개와 점수 반영을 관리한다.
+서버 시작 시와 15분 간격으로 만료 평가 공개 및 미반영 점수 복구 작업을 수행한다.
+게시글 완료는 수령완료 참여자가 1명 이상이고 미해결 예외가 없을 때만 허용한다.
 ```
 
-프론트엔드에서 거래 완료 버튼을 만들 경우 `closed`가 아니라 `completed`를 보내야 한다.
+주요 신규 신뢰 이벤트:
 
-## 9. API 응답 기준
+```text
+participant_received
+post_review_aggregate_author
+trade_review_participant
+```
 
-사용자 응답에는 다음 두 값을 모두 포함한다.
+`participant_no_show` 등 기존 이벤트 타입은 이력 호환을 위해 남아 있지만, 신고·확인 절차가 없는 노쇼 자동 감점은 이번 정책에서 사용하지 않는다.
+
+## 6. API/Swagger 영향
+
+```text
+변경 여부: 있음
+
+신규 API:
+GET  /api/users/me/pending-reviews
+GET  /api/users/{id}/review-summary
+GET  /api/posts/{id}/reviews/eligibility
+POST /api/posts/{id}/reviews
+PUT  /api/reviews/{id}
+
+관련 기존 API:
+PATCH /api/posts/{id}/status
+PATCH /api/posts/{id}/participants/{userId}/status
+POST  /api/posts/{id}/participants
+DELETE /api/posts/{id}/participants/{userId}
+
+인증 기준:
+세션 사용자를 우선 사용한다.
+개발·연동 환경에서는 X-User-Id 헤더를 대체 수단으로 사용한다.
+요청 body의 사용자 ID만으로 점수 관련 작업을 수행하지 않는다.
+
+Swagger 변경 이력 문서:
+docs/api/SWAGGER_CHANGELOG.md
+OpenAPI 산출물:
+docs/openapi/openapi.json
+```
+
+평가 등록 요청:
 
 ```json
 {
-  "id": "user-uuid",
-  "nickname": "홍길동",
-  "studentId": "20241234",
-  "trustScore": 50,
-  "trustGrade": 3.5
+  "revieweeId": "{userId}",
+  "rating": "positive",
+  "tags": ["ON_TIME", "KIND_COMMUNICATION"]
 }
 ```
 
-각 필드의 의미:
+평가 수정 요청에는 평가 대상 변경을 막기 위해 `revieweeId`를 받지 않고 `rating`, `tags`만 받는다. 공개 평가 요약은 작성자 신원을 노출하지 않으며 전체 집계와 `organizer`, `participant` 역할별 집계를 반환한다.
+
+## 7. ERD/DB 영향
 
 ```text
-trustScore
-= 백엔드 내부 정책 값이다.
-= 관리자, 정책 계산, 필터링 기준으로 사용한다.
+변경 여부: 있음
 
-trustGrade
-= 사용자에게 보여줄 신뢰학점이다.
-= 프론트엔드는 기본적으로 이 값을 표시한다.
+신규 테이블:
+trade_reviews
+
+post_participants 신규 컬럼:
+received_at
+
+trust_events 확장 컬럼:
+source_review_id
+policy_version
+effective_score_change
+occurred_at
+expires_at
+idempotency_key
+
+주요 제약:
+trade_reviews는 post_id + reviewer_id + reviewee_id 조합을 유일하게 유지한다.
+trust_events.idempotency_key는 유일 값이다.
+
+마이그레이션 필요 여부:
+운영 DB 반영 필요
+
+ERD 문서:
+docs/architecture/ERD.md
+ERD 변경 이력 문서:
+docs/architecture/ERD_CHANGELOG.md
 ```
 
-프론트엔드 표시 예시:
+`trade_reviews.status`는 `pending`, `published`, `hidden`, `disputed`, `invalidated`를 저장할 수 있다. 현재 자동 흐름에서는 `pending`, `published`를 사용하며 나머지는 운영자 분쟁 처리 기능을 위한 예약 상태다.
+
+## 8. 프론트엔드 영향
 
 ```text
-신뢰학점 3.5
-신뢰학점 4.1
-신뢰학점 2.9
+필수 화면:
+거래 완료 후 평가 대상 목록
+모집자 평가 화면
+참여자별 평가 화면
+내 평가 대기 목록
+사용자 공개 평가 요약
+
+평가 화면 순서:
+1. GET /api/posts/{id}/reviews/eligibility 호출
+2. 응답의 revieweeRole과 allowedTags로 선택지 렌더링
+3. positive, neutral, negative 중 하나 선택
+4. positive/negative이면 태그 1~5개 선택
+5. POST /api/posts/{id}/reviews 제출
+
+표시 상태:
+not_submitted = 평가 가능
+pending = 제출 완료, 공개 전이며 수정 가능
+published = 공개 완료, 수정 불가
+expired = 평가 기간 종료
+
+주의사항:
+태그 목록과 평가 기간을 프론트에 상수로 복제하지 않는다.
+trustGrade는 서버 응답값을 사용한다.
+모집자는 수령 완료 참여자마다 평가 UI를 제공한다.
+공개 프로필에는 익명 집계만 표시한다.
 ```
 
-## 10. TrustEvent 기록 기준
-
-신뢰도가 변경될 때마다 `trust_events` 테이블에 이력이 남는다.
-
-### 컬럼
-
-| 컬럼 | 의미 |
-| --- | --- |
-| `id` | 이벤트 ID |
-| `user_id` | 점수가 변경되는 사용자 |
-| `post_id` | 관련 게시글, 없으면 null |
-| `actor_user_id` | 이벤트를 발생시킨 사용자, 없으면 null |
-| `type` | 이벤트 타입 |
-| `score_change` | 점수 변화량 |
-| `previous_score` | 변경 전 점수 |
-| `next_score` | 변경 후 점수 |
-| `reason` | 사람이 읽을 수 있는 사유 |
-| `metadata` | 추후 확장을 위한 JSON 데이터 |
-| `created_at` | 이벤트 발생 시각 |
-
-### 이벤트 타입
-
-현재 정의된 이벤트 타입은 다음과 같다.
-
-| 타입 | 의미 | 현재 사용 여부 |
-| --- | --- | --- |
-| `post_completed_author` | 거래 완료 작성자 보상 | 사용 |
-| `post_completed_participant` | 거래 완료 참여자 보상 | 사용 |
-| `post_cancelled_by_author` | 작성자 거래 취소 감점 | 사용 |
-| `post_deleted_by_author` | 작성자 게시글 삭제 감점 | 사용 |
-| `participant_cancelled` | 참여자 참여 취소 감점 | 사용 |
-| `participant_no_show` | 노쇼 확정 감점 | 예약 |
-| `agreement_confirmed` | 사전 약속 확인 | 예약 |
-| `manual_adjustment` | 관리자 또는 legacy 수동 조정 | 사용 가능 |
-
-## 11. 현재 코드 적용 위치
-
-### 거래 완료
-
-게시글 상태가 `completed`로 바뀌면 신뢰도 보상이 적용된다.
-
-```text
-PostService.updatePostStatus()
-PostService.updatePost()
-```
-
-적용 정책:
-
-```text
-작성자: trustScore +10, trustGrade +0.2
-참여자: trustScore +5, trustGrade +0.1
-```
-
-### 거래 취소
-
-게시글 상태가 `cancelled`로 바뀌면 작성자에게 감점이 적용된다.
-
-```text
-PostService.updatePostStatus()
-PostService.updatePost()
-```
-
-적용 정책:
-
-```text
-작성자: trustScore -5, trustGrade -0.1
-```
-
-### 게시글 삭제
-
-게시글을 삭제하면 작성자에게 감점이 적용된다.
-
-```text
-PostService.deletePost()
-```
-
-적용 정책:
-
-```text
-작성자: trustScore -5, trustGrade -0.1
-```
-
-### 참여 취소
-
-참여자가 공동구매 참여를 취소하면 참여자에게 감점이 적용된다.
-
-```text
-PostParticipantService.leavePost()
-```
-
-적용 정책:
-
-```text
-참여자: trustScore -3
-```
-
-표시 학점은 소수점 첫째 자리 반올림 때문에 즉시 변하지 않을 수 있다.
-
-## 12. 왜 TrustEvent가 필요한가
-
-단순히 `users.trust_score`만 있으면 다음 질문에 답할 수 없다.
-
-```text
-왜 이 사용자는 신뢰학점 3.1인가?
-언제 감점되었는가?
-어떤 게시글에서 문제가 생겼는가?
-작성자 때문에 감점되었는가, 참여자 때문에 감점되었는가?
-반복 취소 사용자인가?
-노쇼 이력이 있는가?
-```
-
-`trust_events`를 남기면 사용자 신뢰도를 설명할 수 있다.
-
-예시:
-
-```text
-초기 trustScore: 50
-초기 trustGrade: 3.5
-
-+5 공동구매 참여 완료
--3 참여 취소
--5 작성한 공동구매 취소
-= 현재 trustScore 47
-= 현재 trustGrade 3.4
-```
-
-이 이력은 이후 다음 기능의 근거가 된다.
-
-```text
-신뢰학점 낮은 사용자 참여 제한
-반복 취소 사용자 탐지
-노쇼 신고 처리
-거래 분쟁 시 이력 확인
-관리자 수동 조정
-프론트엔드 신뢰학점 표시
-```
-
-## 13. 현재 구현과 예정 기능 구분
-
-### 현재 구현됨
-
-```text
-users.trust_score 필드
-trustGrade 계산 함수
-User API 응답에 trustGrade 포함
-TrustEvent 모델
-TrustService
-점수 0~100 보정
-거래 완료 보상
-거래 취소 감점
-게시글 삭제 감점
-참여 취소 감점
-점수 변경 이력 저장
-신뢰 이벤트 조회 API
-```
-
-### 아직 구현 전
-
-```text
-사전 약속 확인 API
-노쇼 신고 API
-관리자 수동 점수 조정 API
-신뢰학점 기반 게시글 필터링
-신뢰학점 기반 참여 제한
-학교 구성원 인증 레벨
-```
-
-## 14. 신뢰 이벤트 조회 API
-
-신뢰학점은 숫자만 보여주면 사용자가 납득하기 어렵다.
-
-따라서 `trust_events`에 저장된 변경 이력을 조회하는 API를 추가한다.
-
-```text
-GET /api/users/:id/trust-events
-```
-
-요청 예시:
+## 9. 검증 방법
 
 ```bash
-curl -s "https://damara.bluerack.org/api/users/{id}/trust-events?limit=20&offset=0"
+npx tsc --noEmit
+npx vitest run
+npm run openapi:generate
+npm run openapi:lint
+git diff --check
 ```
 
-응답 예시:
-
-```json
-{
-  "trustEvents": [
-    {
-      "type": "post_completed_author",
-      "scoreChange": 10,
-      "previousScore": 50,
-      "nextScore": 60,
-      "previousGrade": 3.5,
-      "nextGrade": 3.7,
-      "reason": "공동구매 거래 완료: 작성자 보상",
-      "createdAt": "2026-05-09T00:00:00.000Z"
-    }
-  ],
-  "total": 1,
-  "limit": 20,
-  "offset": 0
-}
-```
-
-프론트엔드는 사용자에게 다음 정보를 중심으로 보여주면 된다.
+검증 결과:
 
 ```text
-reason
-previousGrade
-nextGrade
-createdAt
+TypeScript 타입 검사 통과
+테스트 20개 파일, 90개 테스트 통과
+OpenAPI 생성 및 린트 통과
+git diff --check 통과
 ```
 
-`scoreChange`, `previousScore`, `nextScore`는 내부 정책 점수라서 일반 사용자 화면에는 굳이 노출하지 않아도 된다.
+PowerShell에서는 기존 `npm run build`의 자산 복사 단계가 Unix 전용 `mkdir -p`, `cp` 명령 때문에 실패할 수 있다. TypeScript 검증은 위의 `npx tsc --noEmit`으로 별도 확인했다.
 
-## 15. 다음 구현 예정: 사전 약속 확인
-
-이미지에서 제안한 “거래 분쟁 최소화를 위한 사전 약속 확인 절차”는 다음 단계에서 구현한다.
-
-추천 구조:
+## 10. 남은 작업
 
 ```text
-post_participants.agreement_status
-post_participants.agreement_accepted_at
-```
+후속 기능:
+최근 1년 평가 가중치
+동일 사용자 반복 거래에 대한 점수 조작 방지
+신고, 이의제기, 운영자 숨김·무효화 처리
+노쇼 신고와 상대 확인 또는 운영자 판정 기반 감점
 
-예상 상태:
+운영/배포 주의점:
+운영 DB에 trade_reviews 테이블과 관련 컬럼·ENUM을 먼저 반영한다.
+TradeReviewPublicationJob이 한 서버에서 중복 실행되어도 멱등 키로 점수 중복은 방지되지만,
+다중 인스턴스 운영 시에는 전용 스케줄러 또는 분산 락 적용을 권장한다.
 
-```text
-pending
-accepted
-```
+테스트 보강:
+실제 DB를 사용하는 평가 동시 제출 통합 테스트
+평가 만료 배치와 서버 재시작 복구 통합 테스트
+권한 위조와 상태 전이 API 통합 테스트
 
-예상 흐름:
-
-```text
-1. 사용자가 공동구매 참여 요청
-2. 참여 row 생성
-3. agreement_status = pending
-4. 사용자가 약속 확인 버튼 클릭
-5. agreement_status = accepted
-6. accepted 상태만 최종 참여자로 간주
-```
-
-이 기능이 들어가면 `agreement_confirmed` 이벤트를 `trust_events`에 기록할 수 있다.
-
-## 16. 다음 구현 예정: 노쇼 정책
-
-현재 `PARTICIPANT_NO_SHOW = -10` 정책 상수와 `participant_no_show` 이벤트 타입은 예약되어 있다.
-
-다만 노쇼는 악용 가능성이 있으므로, 바로 감점하지 않고 신고/확정 단계를 두는 것이 안전하다.
-
-추천 흐름:
-
-```text
-1. 작성자가 참여자를 노쇼로 신고
-2. no_show_reports row 생성
-3. 상태는 pending
-4. 관리자 또는 검증 로직이 confirmed 처리
-5. confirmed 시 TrustService로 -10 적용
-```
-
-즉, 노쇼 감점은 신고 생성 시점이 아니라 확정 시점에 적용한다.
-
-## 17. 운영 주의사항
-
-현재 서버는 `sequelize.sync({ alter: true })`를 사용하고 있다.
-
-이 방식은 개발 중에는 편하지만 운영 DB에서는 unique index 중복 생성 같은 문제가 생길 수 있다. 실제 운영에서는 마이그레이션 방식으로 전환하는 것이 좋다.
-
-이번 브랜치에서 추가되는 테이블:
-
-```text
-trust_events
-```
-
-운영 반영 전에는 마이그레이션 파일로 분리하는 것을 권장한다.
-
-## 18. 요약
-
-이번 작업의 핵심은 신뢰도를 대학교 서비스에 맞는 신뢰학점 컨셉으로 리팩토링한 것이다.
-
-```text
-기존:
-users.trust_score 숫자만 변경
-프론트에는 신뢰점수 n점으로 표시
-
-변경:
-내부는 trustScore 0~100 유지
-외부는 trustGrade 2.5~4.5로 표시
-TrustService가 정책과 변환을 담당
-trust_events에 변경 이력 저장
-completed/cancelled/delete/leave 이벤트 기준 명확화
-```
-
-현재 기준:
-
-```text
-회원가입: trustScore 50, trustGrade 3.5
-거래 완료 작성자: +10점, +0.2
-거래 완료 참여자: +5점, +0.1
-거래 취소 작성자: -5점, -0.1
-게시글 삭제 작성자: -5점, -0.1
-참여 취소 참여자: -3점
-노쇼 확정 참여자: -10점, -0.2 예정
+문서 보강:
+운영자 분쟁 처리 정책이 확정되면 상태 전이와 API 계약을 추가한다.
 ```

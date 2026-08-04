@@ -9,12 +9,14 @@ import { PostParticipantRepo } from "../repos/PostParticipantRepo";
 import PostModel from "../models/Post";
 import { FavoriteService } from "./FavoriteService";
 import { NotificationService } from "./NotificationService";
-import { TrustService } from "./TrustService";
+import { TRUST_POLICY, TrustService } from "./TrustService";
 import { PostExceptionService } from "./PostExceptionService";
+import { PostExceptionRepo } from "../repos/PostExceptionRepo";
 import { PostListOptions } from "../types/post-list";
 import {
   ParticipantStatus,
   PARTICIPANT_STATUS_LABELS,
+  canTransitionParticipantStatus,
 } from "../types/participant-status";
 import { GroupBuyMode, GroupBuyType } from "../types/group-buy";
 import {
@@ -24,6 +26,34 @@ import {
 } from "../types/pickup-zone";
 
 type PostListItem = Awaited<ReturnType<typeof PostRepo.list>>[number];
+
+function getCancellationReferenceAt(post: {
+  pickupDate: string | null;
+  pickupStartTime: string | null;
+  deadline: Date;
+}) {
+  if (post.pickupDate && post.pickupStartTime) {
+    const pickupAt = new Date(
+      `${post.pickupDate}T${post.pickupStartTime}+09:00`
+    );
+    if (!Number.isNaN(pickupAt.getTime())) return pickupAt;
+  }
+  return new Date(post.deadline);
+}
+
+async function getAuthorCancellationScore(postId: string) {
+  const participants = await PostParticipantRepo.findByPostId(postId);
+  if (participants.length === 0) return 0;
+
+  const hasPickupReady = participants.some(
+    (participant) =>
+      participant.participantStatus === "pickup_ready" ||
+      participant.participantStatus === "received"
+  );
+  return hasPickupReady
+    ? TRUST_POLICY.AUTHOR_CANCELLED_POST_PAYMENT
+    : TRUST_POLICY.AUTHOR_CANCELLED_PRE_PAYMENT;
+}
 type EnrichedPostListItem = PostListItem & {
   favoriteCount: number;
   isFavorite: boolean;
@@ -826,6 +856,38 @@ export const PostService = {
       }
     }
 
+    if (post.status === newStatus) {
+      if (newStatus === "completed") {
+        await TrustService.recordPostCompletedForAuthor(id, post.authorId);
+      } else if (newStatus === "cancelled") {
+        const cancelScore = await getAuthorCancellationScore(id);
+        if (cancelScore !== 0) {
+          await TrustService.recordPostCancelledByAuthor(
+            id,
+            post.authorId,
+            cancelScore
+          );
+        }
+      }
+      return withPostComputedFields(post);
+    }
+
+    if (newStatus === "completed") {
+      const [receivedCount, openExceptionCount] = await Promise.all([
+        PostParticipantRepo.countByPostIdAndStatus(id, "received"),
+        PostExceptionRepo.countOpenByPostId(id),
+      ]);
+      if (receivedCount === 0) {
+        throw new RouteError(
+          HttpStatusCodes.BAD_REQUEST,
+          "RECEIVED_PARTICIPANT_REQUIRED"
+        );
+      }
+      if (openExceptionCount > 0) {
+        throw new RouteError(HttpStatusCodes.CONFLICT, "OPEN_EXCEPTION_EXISTS");
+      }
+    }
+
     // 상태 업데이트
     await PostRepo.update(id, { status: newStatus });
 
@@ -841,30 +903,11 @@ export const PostService = {
 
     // 상태 변경 시 신뢰도 업데이트
     if (newStatus === "completed") {
-      // 공동구매 거래 완료: 주최자 +10점, 참여자 +5점
-      try {
-        await TrustService.recordPostCompletedForAuthor(id, post.authorId);
-      } catch (error) {
-        console.error("Failed to update trust score for author:", error);
-      }
+      // 거래 완료 시 모집자 행동 점수만 반영한다. 참여자는 수령 시 반영한다.
+      await TrustService.recordPostCompletedForAuthor(id, post.authorId);
 
       const participants = await PostParticipantRepo.findByPostId(id);
-      const participantUserIds: string[] = [];
-
-      for (const participant of participants) {
-        try {
-          await TrustService.recordPostCompletedForParticipant(
-            id,
-            participant.userId
-          );
-          participantUserIds.push(participant.userId);
-        } catch (error) {
-          console.error(
-            `Failed to update trust score for participant ${participant.userId}:`,
-            error
-          );
-        }
-      }
+      const participantUserIds = participants.map((participant) => participant.userId);
 
       // 공동구매 완료 알림 생성 (주최자 + 참여자)
       try {
@@ -877,11 +920,13 @@ export const PostService = {
         console.error("Failed to create completion notification:", error);
       }
     } else if (newStatus === "cancelled") {
-      // 공동구매 취소: 주최자 -5점
-      try {
-        await TrustService.recordPostCancelledByAuthor(id, post.authorId);
-      } catch (error) {
-        console.error("Failed to update trust score for author:", error);
+      const cancelScore = await getAuthorCancellationScore(id);
+      if (cancelScore !== 0) {
+        await TrustService.recordPostCancelledByAuthor(
+          id,
+          post.authorId,
+          cancelScore
+        );
       }
 
       // 공동구매 취소 알림 생성 (참여자 + 관심 등록자)
@@ -924,93 +969,19 @@ export const PostService = {
       throw new RouteError(HttpStatusCodes.NOT_FOUND, "POST_NOT_FOUND");
     }
 
+    if (patch.status !== undefined) {
+      throw new RouteError(
+        HttpStatusCodes.BAD_REQUEST,
+        "POST_STATUS_ENDPOINT_REQUIRED"
+      );
+    }
+
     const updatePatch = validateTradeModeFields(
       validatePickupFields(patch, oldPost),
       oldPost
     );
     const updatedPost = await PostRepo.update(id, updatePatch);
     const newPost = updatedPost?.get();
-
-    // status 변경 시 신뢰도 업데이트
-    if (patch.status && oldPost.status !== patch.status) {
-      if (patch.status === "completed") {
-        // 공동구매 거래 완료: 주최자 +10점, 참여자 +5점
-        try {
-          await TrustService.recordPostCompletedForAuthor(
-            id,
-            oldPost.authorId
-          );
-        } catch (error) {
-          // 신뢰도 업데이트 실패해도 게시글 업데이트는 성공으로 처리
-          console.error("Failed to update trust score for author:", error);
-        }
-
-        // 참여자들에게 +5점
-        const participants = await PostParticipantRepo.findByPostId(id);
-        const participantUserIds: string[] = [];
-
-        for (const participant of participants) {
-          try {
-            await TrustService.recordPostCompletedForParticipant(
-              id,
-              participant.userId
-            );
-            participantUserIds.push(participant.userId);
-          } catch (error) {
-            console.error(
-              `Failed to update trust score for participant ${participant.userId}:`,
-              error
-            );
-          }
-        }
-
-        // 공동구매 완료 알림 생성 (주최자 + 참여자)
-        try {
-          const allUserIds = [oldPost.authorId, ...participantUserIds];
-          await NotificationService.createPostCompletedNotification(
-            id,
-            allUserIds
-          );
-        } catch (error) {
-          console.error("Failed to create completion notification:", error);
-        }
-      } else if (patch.status === "cancelled") {
-        // 공동구매 취소: 주최자 -5점
-        try {
-          await TrustService.recordPostCancelledByAuthor(
-            id,
-            oldPost.authorId
-          );
-        } catch (error) {
-          console.error("Failed to update trust score for author:", error);
-        }
-
-        // 공동구매 취소 알림 생성 (참여자 + 관심 등록자)
-        try {
-          const participants = await PostParticipantRepo.findByPostId(id);
-          const participantUserIds = participants.map((p) => p.userId);
-
-          // 관심 등록자 목록 가져오기
-          const { FavoriteRepo } = await import("../repos/FavoriteRepo");
-          const favorites = await FavoriteRepo.findByPostId(id);
-          const favoriteUserIds = favorites.map((f) => f.userId);
-
-          // 중복 제거
-          const allUserIds = [
-            ...new Set([...participantUserIds, ...favoriteUserIds]),
-          ];
-
-          if (allUserIds.length > 0) {
-            await NotificationService.createPostCancelledNotification(
-              id,
-              allUserIds
-            );
-          }
-        } catch (error) {
-          console.error("Failed to create cancellation notification:", error);
-        }
-      }
-    }
 
     return newPost ? withPostComputedFields(newPost) : newPost;
   },
@@ -1019,22 +990,25 @@ export const PostService = {
    * 삭제
    * - 삭제 시 주최자 내부 신뢰점수 -5점
    */
-  async deletePost(id: string) {
+  async deletePost(id: string, actorUserId: string) {
     // 삭제 전에 게시글 정보 조회
     const post = await PostRepo.findById(id);
     if (!post) {
       throw new RouteError(HttpStatusCodes.NOT_FOUND, "POST_NOT_FOUND");
     }
+    if (post.authorId !== actorUserId) {
+      throw new RouteError(HttpStatusCodes.FORBIDDEN, "POST_DELETE_FORBIDDEN");
+    }
+
+    const participantCount = await PostParticipantRepo.countByPostId(id);
+    if (participantCount > 0) {
+      throw new RouteError(
+        HttpStatusCodes.CONFLICT,
+        "POST_HAS_PARTICIPANTS_CANCEL_REQUIRED"
+      );
+    }
 
     await PostRepo.delete(id);
-
-    // 주최자 신뢰도 감소
-    try {
-      await TrustService.recordPostDeletedByAuthor(id, post.authorId);
-    } catch (error) {
-      // 신뢰도 업데이트 실패해도 게시글 삭제는 성공으로 처리
-      console.error("Failed to update trust score for author:", error);
-    }
   },
 };
 
@@ -1080,6 +1054,41 @@ export const PostParticipantService = {
    * - 주최자에게 참여자 취소 알림 생성
    */
   async leavePost(postId: string, userId: string) {
+    const [post, participant] = await Promise.all([
+      PostModel.findByPk(postId),
+      PostParticipantRepo.findByPostAndUser(postId, userId),
+    ]);
+    if (!post) {
+      throw new RouteError(HttpStatusCodes.NOT_FOUND, "POST_NOT_FOUND");
+    }
+    if (!participant) {
+      throw new RouteError(HttpStatusCodes.NOT_FOUND, "PARTICIPANT_NOT_FOUND");
+    }
+    if (participant.participantStatus === "received") {
+      throw new RouteError(
+        HttpStatusCodes.CONFLICT,
+        "RECEIVED_PARTICIPATION_CANNOT_CANCEL"
+      );
+    }
+
+    const hoursUntilPickup =
+      (getCancellationReferenceAt(post).getTime() - Date.now()) /
+      (60 * 60 * 1000);
+    const cancelScore =
+      participant.participantStatus === "pickup_ready"
+        ? TRUST_POLICY.PARTICIPANT_CANCELLED_PICKUP_READY
+        : participant.participantStatus === "payment_pending"
+          ? TRUST_POLICY.PARTICIPANT_CANCELLED_AFTER_PAYMENT
+          : hoursUntilPickup <= 24
+            ? TRUST_POLICY.PARTICIPANT_CANCELLED_WITHIN_24_HOURS
+            : 0;
+    if (cancelScore !== 0) {
+      await TrustService.recordParticipantCancelled(
+        postId,
+        userId,
+        cancelScore
+      );
+    }
     await PostParticipantRepo.delete(postId, userId);
 
     // currentQuantity 업데이트
@@ -1088,14 +1097,6 @@ export const PostParticipantService = {
       { currentQuantity: count },
       { where: { id: postId } }
     );
-
-    // 참여자 신뢰도 감소
-    try {
-      await TrustService.recordParticipantCancelled(postId, userId);
-    } catch (error) {
-      // 신뢰도 업데이트 실패해도 참여 취소는 성공으로 처리
-      console.error("Failed to update trust score for participant:", error);
-    }
 
     // 주최자에게 참여자 취소 알림 생성
     try {
@@ -1163,11 +1164,53 @@ export const PostParticipantService = {
       );
     }
 
-    return await PostParticipantRepo.updateStatus(
+    const previousParticipant = await PostParticipantRepo.findByPostAndUser(
+      postId,
+      userId
+    );
+    if (!previousParticipant) {
+      throw new RouteError(HttpStatusCodes.NOT_FOUND, "PARTICIPANT_NOT_FOUND");
+    }
+
+    if (participantStatus === "received" && actorUserId !== userId) {
+      throw new RouteError(
+        HttpStatusCodes.FORBIDDEN,
+        "RECEIPT_MUST_BE_CONFIRMED_BY_PARTICIPANT"
+      );
+    }
+
+    if (
+      participantStatus !== "received" &&
+      participantStatus !== previousParticipant.participantStatus &&
+      actorUserId !== post.authorId
+    ) {
+      throw new RouteError(
+        HttpStatusCodes.FORBIDDEN,
+        "PARTICIPANT_PROGRESS_MUST_BE_UPDATED_BY_AUTHOR"
+      );
+    }
+
+    if (
+      !canTransitionParticipantStatus(
+        previousParticipant.participantStatus,
+        participantStatus
+      )
+    ) {
+      throw new RouteError(
+        HttpStatusCodes.BAD_REQUEST,
+        "INVALID_PARTICIPANT_STATUS_TRANSITION"
+      );
+    }
+
+    const participant = await PostParticipantRepo.updateStatus(
       postId,
       userId,
       participantStatus
     );
+    if (participantStatus === "received") {
+      await TrustService.recordParticipantReceived(postId, userId);
+    }
+    return participant;
   },
 
   /**

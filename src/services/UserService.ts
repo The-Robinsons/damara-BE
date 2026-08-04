@@ -482,6 +482,7 @@ export const UserService = {
     const completedEventTypes: TrustEventType[] = [
       "post_completed_author",
       "post_completed_participant",
+      "participant_received",
     ];
     const cancelEventTypes: TrustEventType[] = [
       "post_cancelled_by_author",
@@ -540,6 +541,7 @@ export const UserService = {
     const completedEventTypes: TrustEventType[] = [
       "post_completed_author",
       "post_completed_participant",
+      "participant_received",
     ];
     const cancelEventTypes: TrustEventType[] = [
       "post_cancelled_by_author",

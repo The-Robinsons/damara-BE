@@ -4,6 +4,7 @@ import logger from "jet-logger";
 import { connectDB } from "./db";
 import { createServer } from "http";
 import { setupSocketIO, setIO } from "./config/socket";
+import { startTradeReviewPublicationJob } from "./jobs/TradeReviewPublicationJob";
 
 /**
  * server.ts
@@ -33,6 +34,7 @@ async function startServer() {
     //
     //    - 실제 서비스에서는 false로 바꾸거나 migration을 사용해야 함
     await syncDatabase();
+    startTradeReviewPublicationJob();
 
     // 3. HTTP 서버 생성 (Express와 Socket.io를 함께 사용하기 위해)
     const httpServer = createServer(app);

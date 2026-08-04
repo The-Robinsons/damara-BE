@@ -13,3 +13,23 @@ export const PARTICIPANT_STATUS_LABELS: Record<ParticipantStatus, string> = {
   pickup_ready: "수령예정",
   received: "수령완료",
 };
+
+export const PARTICIPANT_STATUS_TRANSITIONS: Record<
+  ParticipantStatus,
+  ParticipantStatus | null
+> = {
+  participating: "payment_pending",
+  payment_pending: "pickup_ready",
+  pickup_ready: "received",
+  received: null,
+};
+
+export function canTransitionParticipantStatus(
+  currentStatus: ParticipantStatus,
+  nextStatus: ParticipantStatus
+) {
+  return (
+    currentStatus === nextStatus ||
+    PARTICIPANT_STATUS_TRANSITIONS[currentStatus] === nextStatus
+  );
+}

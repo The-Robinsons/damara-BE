@@ -1,12 +1,19 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { userModel, trustEventRepo } = vi.hoisted(() => ({
+const { userModel, trustEventModel, trustEventRepo, sequelize } = vi.hoisted(() => ({
   userModel: {
     findByPk: vi.fn(),
+  },
+  trustEventModel: {
+    findOne: vi.fn(),
+    create: vi.fn(),
   },
   trustEventRepo: {
     findByUserId: vi.fn(),
     countByUserId: vi.fn(),
+  },
+  sequelize: {
+    transaction: vi.fn(),
   },
 }));
 
@@ -15,15 +22,11 @@ vi.mock("../../src/models/User", () => ({
 }));
 
 vi.mock("../../src/db", () => ({
-  sequelize: {
-    transaction: vi.fn(),
-  },
+  sequelize,
 }));
 
 vi.mock("../../src/models/TrustEvent", () => ({
-  default: {
-    create: vi.fn(),
-  },
+  default: trustEventModel,
 }));
 
 vi.mock("../../src/repos/TrustEventRepo", () => ({
@@ -33,6 +36,10 @@ vi.mock("../../src/repos/TrustEventRepo", () => ({
 import { TrustService } from "../../src/services/TrustService";
 
 describe("TrustService", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("신뢰 이벤트 목록에 페이지네이션 메타와 신뢰학점을 포함한다", async () => {
     userModel.findByPk.mockResolvedValueOnce({ id: "user-1" });
     trustEventRepo.findByUserId.mockResolvedValueOnce([
@@ -84,5 +91,60 @@ describe("TrustService", () => {
 
     expect(trustEventRepo.findByUserId).toHaveBeenCalledWith("user-1", 2, 2);
     expect(trustEventRepo.countByUserId).toHaveBeenCalledWith("user-1");
+  });
+
+  it("returns an existing idempotent event without changing the score", async () => {
+    const existing = { get: vi.fn().mockReturnValue({ id: "event-existing" }) };
+    sequelize.transaction.mockImplementationOnce(async (callback) =>
+      callback({ LOCK: { UPDATE: "UPDATE" } })
+    );
+    trustEventModel.findOne.mockResolvedValueOnce(existing);
+
+    await expect(
+      TrustService.applyEvent({
+        userId: "user-1",
+        type: "participant_received",
+        scoreChange: 4,
+        idempotencyKey: "received-once",
+      })
+    ).resolves.toEqual({ id: "event-existing" });
+
+    expect(userModel.findByPk).not.toHaveBeenCalled();
+    expect(trustEventModel.create).not.toHaveBeenCalled();
+  });
+
+  it("stores the effective score change after clamping", async () => {
+    const user = {
+      trustScore: 99,
+      update: vi.fn().mockResolvedValue(undefined),
+    };
+    const createdEvent = { get: vi.fn().mockReturnValue({ id: "event-1" }) };
+    sequelize.transaction.mockImplementationOnce(async (callback) =>
+      callback({ LOCK: { UPDATE: "UPDATE" } })
+    );
+    trustEventModel.findOne.mockResolvedValueOnce(null);
+    userModel.findByPk.mockResolvedValueOnce(user);
+    trustEventModel.create.mockResolvedValueOnce(createdEvent);
+
+    await TrustService.applyEvent({
+      userId: "user-1",
+      type: "participant_received",
+      scoreChange: 4,
+      idempotencyKey: "received-once",
+    });
+
+    expect(user.update).toHaveBeenCalledWith(
+      { trustScore: 100 },
+      expect.any(Object)
+    );
+    expect(trustEventModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scoreChange: 1,
+        effectiveScoreChange: 1,
+        previousScore: 99,
+        nextScore: 100,
+      }),
+      expect.any(Object)
+    );
   });
 });

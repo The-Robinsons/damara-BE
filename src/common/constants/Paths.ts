@@ -10,6 +10,9 @@ export default {
   Posts: {
     Base: "/posts",
   },
+  Reviews: {
+    Base: "/reviews",
+  },
   Upload: {
     Base: "/upload",
   },

@@ -6,7 +6,6 @@ import { PARTICIPANT_STATUSES } from "../../../types/participant-status";
  */
 export const updateParticipantStatusSchema = z.object({
   participantStatus: z.enum(PARTICIPANT_STATUSES),
-  actorUserId: z.string().uuid().optional(),
 });
 
 export type UpdateParticipantStatusReq = z.infer<

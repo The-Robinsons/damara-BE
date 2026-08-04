@@ -87,6 +87,7 @@ erDiagram
       UUID post_id FK
       UUID user_id FK
       ENUM participant_status
+      DATETIME received_at
       DATETIME created_at
       DATETIME updated_at
     }
@@ -156,6 +157,31 @@ erDiagram
       INTEGER next_score
       STRING reason
       JSON metadata
+      UUID source_review_id FK
+      STRING policy_version
+      INTEGER effective_score_change
+      DATETIME occurred_at
+      DATETIME expires_at
+      STRING idempotency_key UK
+      DATETIME created_at
+      DATETIME updated_at
+    }
+
+    trade_reviews {
+      UUID id PK
+      UUID post_id FK
+      UUID reviewer_id FK
+      UUID reviewee_id FK
+      ENUM reviewer_role
+      ENUM reviewee_role
+      ENUM rating
+      JSON tags
+      ENUM status
+      DATETIME submitted_at
+      DATETIME published_at
+      DATETIME expires_at
+      DATETIME score_applied_at
+      STRING policy_version
       DATETIME created_at
       DATETIME updated_at
     }
@@ -217,6 +243,10 @@ erDiagram
     users ||--o{ trust_events : "신뢰 점수 대상"
     users |o--o{ trust_events : "신뢰 이벤트 행위자"
     posts |o--o{ trust_events : "관련 게시글"
+    posts ||--o{ trade_reviews : "거래 평가"
+    users ||--o{ trade_reviews : "평가 작성"
+    users ||--o{ trade_reviews : "평가 수신"
+    trade_reviews |o--o{ trust_events : "점수 근거"
     posts ||--o{ post_exceptions : "예외 상황"
     users ||--o{ post_exceptions : "신고자"
 ```
@@ -399,6 +429,9 @@ posts 1 : N trust_events
 ```text
 post_completed_author
 post_completed_participant
+participant_received
+post_review_aggregate_author
+trade_review_participant
 post_cancelled_by_author
 post_deleted_by_author
 participant_cancelled
@@ -407,7 +440,21 @@ agreement_confirmed
 manual_adjustment
 ```
 
-### 9. 공구 예외 상황
+학점 이벤트는 `idempotency_key`로 중복 반영을 차단하고 `effective_score_change`에 0~100 범위 보정 후 실제 변화량을 저장한다. `source_review_id`가 있으면 점수의 근거가 된 상호평가를 가리킨다.
+
+### 9. 거래 상호평가
+
+`trade_reviews`는 완료된 거래에서 모집자와 수령 완료 참여자가 서로 작성한 평가를 저장한다.
+
+```text
+posts 1 : N trade_reviews
+users 1 : N trade_reviews (reviewer_id)
+users 1 : N trade_reviews (reviewee_id)
+```
+
+동일 거래 관계의 중복 평가는 `unique(post_id, reviewer_id, reviewee_id)`로 차단한다. 평가는 상호 제출 전까지 `pending`, 상호 제출 또는 7일 만료 후 `published`가 되며 `score_applied_at`으로 학점 반영 여부를 추적한다.
+
+### 10. 공구 예외 상황
 
 `post_exceptions`는 가격 변경, 품절, 수령 정보 변경, 파손 같은 공구 진행 중 예외 상황을 기록한다.
 
@@ -445,7 +492,7 @@ warning
 critical
 ```
 
-### 10. 공지사항과 FAQ
+### 11. 공지사항과 FAQ
 
 `notices`와 `faqs`는 독립 테이블이다. 사용자나 게시글과 FK 관계를 맺지 않는다.
 
@@ -477,6 +524,9 @@ chat_rooms.post_id: unique
 user_settings.user_id: unique
 post_participants(post_id, user_id): unique
 favorites(user_id, post_id): unique
+trade_reviews(post_id, reviewer_id, reviewee_id): unique
+trust_events.idempotency_key: unique, nullable
+post_participants(participant_status, received_at): index
 ```
 
 ## 삭제 정책 요약
@@ -491,6 +541,8 @@ users 삭제:
 - user_settings: CASCADE
 - trust_events.user_id: CASCADE
 - trust_events.actor_user_id: SET NULL
+- trade_reviews.reviewer_id: CASCADE
+- trade_reviews.reviewee_id: CASCADE
 - post_exceptions.reporter_id: CASCADE
 
 posts 삭제:
@@ -500,11 +552,18 @@ posts 삭제:
 - chat_rooms: CASCADE
 - notifications.post_id: CASCADE
 - trust_events.post_id: SET NULL
+- trade_reviews.post_id: CASCADE
 - post_exceptions: CASCADE
 
 chat_rooms 삭제:
 - messages: CASCADE
 - notifications.chat_room_id: CASCADE
+```
+
+trade_reviews 삭제:
+
+```text
+- trust_events.source_review_id: SET NULL
 ```
 
 ## 논리 테이블로 관리되는 값

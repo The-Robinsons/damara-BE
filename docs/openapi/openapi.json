@@ -29,6 +29,10 @@
       "description": "사용자 API"
     },
     {
+      "name": "Reviews",
+      "description": "거래 상호평가 API"
+    },
+    {
       "name": "Upload",
       "description": "이미지 업로드 API"
     },
@@ -59,6 +63,304 @@
   ],
   "components": {
     "schemas": {
+      "TradeReviewRequest": {
+        "type": "object",
+        "required": [
+          "revieweeId",
+          "rating"
+        ],
+        "properties": {
+          "revieweeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rating": {
+            "type": "string",
+            "enum": [
+              "positive",
+              "neutral",
+              "negative"
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 5,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "ACCURATE_DESCRIPTION",
+                "CLEAR_SETTLEMENT",
+                "GOOD_PROGRESS_UPDATES",
+                "FAST_RESPONSE",
+                "CLEAR_PICKUP_GUIDE",
+                "ON_TIME",
+                "WELL_PREPARED",
+                "KIND_COMMUNICATION",
+                "INACCURATE_DESCRIPTION",
+                "UNCLEAR_SETTLEMENT",
+                "MISSING_PROGRESS_UPDATES",
+                "SLOW_RESPONSE",
+                "FREQUENT_SCHEDULE_CHANGES",
+                "LATE_FOR_PICKUP",
+                "POOR_PREPARATION",
+                "UNFRIENDLY_COMMUNICATION",
+                "PAYMENT_ON_TIME",
+                "EARLY_CHANGE_NOTICE",
+                "SMOOTH_TRANSACTION",
+                "LATE_PAYMENT",
+                "SAME_DAY_CANCELLATION"
+              ]
+            },
+            "description": "긍정·부정 평가는 1개 이상, 보통 평가는 빈 배열"
+          }
+        }
+      },
+      "TradeReviewUpdateRequest": {
+        "type": "object",
+        "required": [
+          "rating"
+        ],
+        "properties": {
+          "rating": {
+            "type": "string",
+            "enum": [
+              "positive",
+              "neutral",
+              "negative"
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 5,
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "TradeReview": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "postId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revieweeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reviewerRole": {
+            "type": "string",
+            "enum": [
+              "organizer",
+              "participant"
+            ]
+          },
+          "revieweeRole": {
+            "type": "string",
+            "enum": [
+              "organizer",
+              "participant"
+            ]
+          },
+          "rating": {
+            "type": "string",
+            "enum": [
+              "positive",
+              "neutral",
+              "negative"
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "published",
+              "hidden",
+              "disputed",
+              "invalidated"
+            ]
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReviewAllowedTags": {
+        "type": "object",
+        "properties": {
+          "positive": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "neutral": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "negative": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ReviewEligibilityTarget": {
+        "type": "object",
+        "properties": {
+          "reviewee": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "nickname": {
+                "type": "string"
+              },
+              "avatarUrl": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "revieweeRole": {
+            "type": "string",
+            "enum": [
+              "organizer",
+              "participant"
+            ]
+          },
+          "allowedTags": {
+            "$ref": "#/components/schemas/ReviewAllowedTags"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_submitted",
+              "pending",
+              "published",
+              "hidden",
+              "disputed",
+              "invalidated",
+              "expired"
+            ]
+          },
+          "reviewId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "ReviewSummary": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "trustScore": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "trustGrade": {
+            "type": "number",
+            "minimum": 2.5,
+            "maximum": 4.5
+          },
+          "reviewCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "ratings": {
+            "type": "object",
+            "properties": {
+              "positive": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "neutral": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "negative": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tag": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "roles": {
+            "type": "object",
+            "description": "모집자와 참여자로 받은 평가를 구분한 요약",
+            "properties": {
+              "organizer": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "participant": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
       "SendEmailVerificationRequest": {
         "type": "object",
         "required": [
@@ -783,6 +1085,9 @@
             "enum": [
               "post_completed_author",
               "post_completed_participant",
+              "participant_received",
+              "post_review_aggregate_author",
+              "trade_review_participant",
               "post_cancelled_by_author",
               "post_deleted_by_author",
               "participant_cancelled",
@@ -796,7 +1101,12 @@
           "scoreChange": {
             "type": "integer",
             "description": "내부 신뢰점수 변화량",
-            "example": 10
+            "example": 5
+          },
+          "effectiveScoreChange": {
+            "type": "integer",
+            "description": "0~100 범위 보정 후 실제 반영된 점수 변화량",
+            "example": 5
           },
           "previousScore": {
             "type": "integer",
@@ -810,7 +1120,7 @@
             "description": "변경 후 내부 신뢰점수",
             "minimum": 0,
             "maximum": 100,
-            "example": 60
+            "example": 55
           },
           "previousGrade": {
             "type": "number",
@@ -826,7 +1136,7 @@
             "description": "변경 후 표시 신뢰학점",
             "minimum": 2.5,
             "maximum": 4.5,
-            "example": 3.7
+            "example": 3.6
           },
           "reason": {
             "type": "string",
@@ -839,6 +1149,30 @@
             "nullable": true,
             "description": "이벤트별 추가 데이터",
             "additionalProperties": true
+          },
+          "sourceReviewId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "점수 변화의 근거가 된 거래 평가 UUID"
+          },
+          "policyVersion": {
+            "type": "string",
+            "example": "trust-v2"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "nullable": true,
+            "description": "동일 사건의 중복 점수 반영을 막는 내부 키"
           },
           "createdAt": {
             "type": "string",
@@ -4372,6 +4706,111 @@
         }
       }
     },
+    "/api/posts/{id}/reviews/eligibility": {
+      "get": {
+        "summary": "거래 상호평가 대상 및 상태 조회",
+        "tags": [
+          "Reviews"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "postId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "targets": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ReviewEligibilityTarget"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "거래 상호평가 대상 및 상태 조회"
+      }
+    },
+    "/api/posts/{id}/reviews": {
+      "post": {
+        "summary": "거래 상호평가 제출",
+        "tags": [
+          "Reviews"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TradeReviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "제출 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeReview"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "중복 제출"
+          }
+        },
+        "description": "거래 상호평가 제출"
+      }
+    },
     "/api/posts": {
       "get": {
         "summary": "홈 피드 상품 목록 조회 (페이징, 검색, 필터, 정렬 가능)",
@@ -5038,10 +5477,20 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "게시글 작성자 UUID"
           }
         ],
         "responses": {
-          "200": {
+          "204": {
             "description": "삭제 성공"
           },
           "404": {
@@ -5118,6 +5567,16 @@
               "format": "uuid"
             },
             "description": "게시글 UUID"
+          },
+          {
+            "in": "header",
+            "name": "X-User-Id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "게시글 작성자 UUID"
           }
         ],
         "requestBody": {
@@ -5127,8 +5586,7 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "status",
-                  "authorId"
+                  "status"
                 ],
                 "properties": {
                   "status": {
@@ -5142,18 +5600,11 @@
                     ],
                     "description": "변경할 상태",
                     "example": "closed"
-                  },
-                  "authorId": {
-                    "type": "string",
-                    "format": "uuid",
-                    "description": "작성자 UUID (권한 확인용)",
-                    "example": "a87522bd-bc79-47b0-a73f-46ea4068a158"
                   }
                 }
               },
               "example": {
-                "status": "closed",
-                "authorId": "a87522bd-bc79-47b0-a73f-46ea4068a158"
+                "status": "closed"
               }
             }
           }
@@ -5294,7 +5745,7 @@
     "/api/posts/{id}/participants/{userId}/status": {
       "patch": {
         "summary": "참여자 상태 변경",
-        "description": "작성자 또는 해당 참여자 본인이 참여자별 진행 상태를 변경합니다.",
+        "description": "모집자는 입금대기와 수령예정 단계를 순서대로 변경하고, 참여자는 수령예정 상태에서 수령완료를 확정합니다.",
         "tags": [
           "Posts"
         ],
@@ -5321,12 +5772,13 @@
           },
           {
             "in": "header",
-            "name": "x-user-id",
+            "name": "X-User-Id",
+            "required": true,
             "schema": {
               "type": "string",
               "format": "uuid"
             },
-            "description": "상태 변경 요청자 UUID. body.actorUserId 대신 사용할 수 있습니다."
+            "description": "상태 변경 요청자 UUID"
           }
         ],
         "requestBody": {
@@ -5341,17 +5793,11 @@
                 "properties": {
                   "participantStatus": {
                     "$ref": "#/components/schemas/ParticipantStatus"
-                  },
-                  "actorUserId": {
-                    "type": "string",
-                    "format": "uuid",
-                    "description": "상태 변경 요청자 UUID. x-user-id 헤더를 쓰면 생략할 수 있습니다."
                   }
                 }
               },
               "example": {
-                "participantStatus": "payment_pending",
-                "actorUserId": "a87522bd-bc79-47b0-a73f-46ea4068a158"
+                "participantStatus": "payment_pending"
               }
             }
           }
@@ -5726,6 +6172,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "취소하는 참여자 UUID. path userId와 같아야 합니다."
           }
         ],
         "responses": {
@@ -5964,6 +6420,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "참여 사용자 UUID. body.userId와 같아야 합니다."
           }
         ],
         "requestBody": {
@@ -6007,6 +6473,59 @@
           }
         },
         "description": "공동구매 참여"
+      }
+    },
+    "/api/reviews/{id}": {
+      "put": {
+        "summary": "공개 전 상호평가 수정",
+        "tags": [
+          "Reviews"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-User-Id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TradeReviewUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeReview"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "이미 공개되어 수정 불가"
+          }
+        },
+        "description": "공개 전 상호평가 수정"
       }
     },
     "/api/upload/image": {
@@ -6244,6 +6763,98 @@
           }
         },
         "description": "다중 이미지 업로드 (최대 10개)"
+      }
+    },
+    "/api/users/me/pending-reviews": {
+      "get": {
+        "summary": "내가 작성할 수 있는 거래 평가 조회",
+        "tags": [
+          "Reviews"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-User-Id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "세션이 없을 때 사용하는 현재 사용자 UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reviews": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/ReviewEligibilityTarget"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "postId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "postTitle": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "내가 작성할 수 있는 거래 평가 조회"
+      }
+    },
+    "/api/users/{id}/review-summary": {
+      "get": {
+        "summary": "사용자가 받은 공개 평가 요약 조회",
+        "tags": [
+          "Reviews"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSummary"
+                }
+              }
+            }
+          }
+        },
+        "description": "사용자가 받은 공개 평가 요약 조회"
       }
     },
     "/api/users": {

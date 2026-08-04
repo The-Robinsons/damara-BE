@@ -6,7 +6,11 @@ import { PostExceptionService } from "../services/PostExceptionService";
 import { PostCreationAttributes } from "../models/Post";
 import { parseReq } from "../routes/common/validation/parseReq";
 import HttpStatusCodes from "../common/constants/HttpStatusCodes";
-import { sendErrorResponse } from "../common/util/route-errors";
+import {
+  RouteError,
+  sendErrorResponse,
+} from "../common/util/route-errors";
+import { getRequestUserId } from "../common/util/request-user";
 import logger from "jet-logger";
 import {
   createPostSchema,
@@ -382,7 +386,8 @@ export async function deletePost(
 ) {
   try {
     const { id } = req.params;
-    await PostService.deletePost(id);
+    const userId = getRequestUserId(req);
+    await PostService.deletePost(id, userId);
 
     res.status(HttpStatusCodes.NO_CONTENT).send();
   } catch (error) {
@@ -416,18 +421,7 @@ export async function updatePostStatus(
     );
     const { status } = validatedData;
 
-    // Request body에서 authorId 추출 (프론트엔드에서 전달)
-    // 또는 세션/토큰에서 authorId 추출 (인증 시스템 구현 시)
-    const authorId = req.body.authorId || (req.headers["x-user-id"] as string);
-
-    if (!authorId) {
-      return sendErrorResponse(
-        res,
-        HttpStatusCodes.BAD_REQUEST,
-        "AUTHOR_ID_REQUIRED",
-        "작성자 ID가 필요합니다."
-      );
-    }
+    const authorId = getRequestUserId(req);
 
     const updatedPost = await PostService.updatePostStatus(
       id,
@@ -453,14 +447,11 @@ export async function joinPost(
 ) {
   try {
     const { id } = req.params;
-    const { userId } = req.body;
-
-    if (!userId) {
-      return sendErrorResponse(
-        res,
-        HttpStatusCodes.BAD_REQUEST,
-        "USER_ID_REQUIRED",
-        "사용자 ID가 필요합니다."
+    const userId = getRequestUserId(req);
+    if (req.body.userId && req.body.userId !== userId) {
+      throw new RouteError(
+        HttpStatusCodes.FORBIDDEN,
+        "PARTICIPATION_USER_MISMATCH"
       );
     }
 
@@ -487,6 +478,13 @@ export async function leavePost(
 ) {
   try {
     const { id, userId } = req.params;
+    const actorUserId = getRequestUserId(req);
+    if (actorUserId !== userId) {
+      throw new RouteError(
+        HttpStatusCodes.FORBIDDEN,
+        "PARTICIPATION_CANCEL_FORBIDDEN"
+      );
+    }
 
     await PostParticipantService.leavePost(id, userId);
     const post = await PostService.getParticipationPostSnapshot(id);
@@ -547,7 +545,7 @@ export async function getParticipatedPosts(
 /**
  * 참여자별 진행 상태 변경
  * PATCH /api/posts/:id/participants/:userId/status
- * body: { participantStatus, actorUserId? }
+ * body: { participantStatus }
  */
 export async function updateParticipantStatus(
   req: Request,
@@ -559,17 +557,7 @@ export async function updateParticipantStatus(
     const validatedData = parseReq<UpdateParticipantStatusReq>(
       updateParticipantStatusSchema
     )(req.body);
-    const actorUserId =
-      validatedData.actorUserId || getSingleValue(req.headers["x-user-id"]);
-
-    if (!actorUserId) {
-      return sendErrorResponse(
-        res,
-        HttpStatusCodes.BAD_REQUEST,
-        "ACTOR_USER_ID_REQUIRED",
-        "상태를 변경하는 사용자 ID가 필요합니다."
-      );
-    }
+    const actorUserId = getRequestUserId(req);
 
     const participant = await PostParticipantService.updateParticipantStatus(
       id,

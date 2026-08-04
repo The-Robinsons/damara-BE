@@ -287,6 +287,9 @@ export const PostParticipantRepo = {
     }
 
     participant.participantStatus = participantStatus;
+    if (participantStatus === "received" && !participant.receivedAt) {
+      participant.receivedAt = new Date();
+    }
     await participant.save();
 
     return participant.get({ plain: true });
@@ -298,6 +301,22 @@ export const PostParticipantRepo = {
   async countByPostId(postId: string) {
     return await PostParticipantModel.count({
       where: { postId },
+    });
+  },
+
+  async findByPostAndUser(postId: string, userId: string) {
+    const participant = await PostParticipantModel.findOne({
+      where: { postId, userId },
+    });
+    return participant ? participant.get({ plain: true }) : null;
+  },
+
+  async countByPostIdAndStatus(
+    postId: string,
+    participantStatus: ParticipantStatus
+  ) {
+    return await PostParticipantModel.count({
+      where: { postId, participantStatus },
     });
   },
 

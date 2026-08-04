@@ -10,6 +10,7 @@ import noticeRouter from "./notices/NoticeRoutes";
 import pickupZoneRouter from "./pickup-zones/PickupZoneRoutes";
 import faqRouter from "./faqs/FaqRoutes";
 import emailVerificationRouter from "./email-verifications/EmailVerificationRoutes";
+import reviewRouter from "./reviews/ReviewRoutes";
 
 const BaseRouter = Router();
 
@@ -18,6 +19,7 @@ BaseRouter.use(Paths.Users.Base, userRouter);
 
 // Post 라우터: /api/posts
 BaseRouter.use(Paths.Posts.Base, postRouter);
+BaseRouter.use(Paths.Reviews.Base, reviewRouter);
 
 // Upload 라우터: /api/upload
 BaseRouter.use(Paths.Upload.Base, uploadRouter);

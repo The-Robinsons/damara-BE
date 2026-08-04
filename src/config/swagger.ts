@@ -107,7 +107,10 @@ const options: swaggerJsdoc.Options = {
             email: {
               type: "string",
               format: "email",
-              example: "user@example.com",
+              pattern: "^[^@\\s]+@mju\\.ac\\.kr$",
+              description:
+                "명지대학교 이메일만 허용합니다. 앞뒤 공백 제거 후 소문자로 정규화합니다.",
+              example: "student@mju.ac.kr",
             },
           },
         },
@@ -134,7 +137,10 @@ const options: swaggerJsdoc.Options = {
             email: {
               type: "string",
               format: "email",
-              example: "user@example.com",
+              pattern: "^[^@\\s]+@mju\\.ac\\.kr$",
+              description:
+                "인증번호를 발급받은 명지대학교 이메일(@mju.ac.kr)",
+              example: "student@mju.ac.kr",
             },
             code: {
               type: "string",

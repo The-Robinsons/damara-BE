@@ -12,11 +12,26 @@ import { RouteError } from "../common/util/route-errors";
 import { sequelize } from "../db";
 import { EmailVerificationRepo } from "../repos/EmailVerificationRepo";
 import { UserRepo } from "../repos/UserRepo";
+import {
+  isMjuEmail,
+  normalizeEmail,
+} from "../common/validation/mju-email";
 
 const HOUR_MS = 60 * 60 * 1000;
 
-export function normalizeEmail(email: string) {
-  return email.trim().toLowerCase();
+export { normalizeEmail } from "../common/validation/mju-email";
+
+export function normalizeMjuEmail(email: string) {
+  const normalizedEmail = normalizeEmail(email);
+  if (!isMjuEmail(normalizedEmail)) {
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      "명지대학교 이메일(@mju.ac.kr)만 사용할 수 있습니다.",
+      "INVALID_MJU_EMAIL"
+    );
+  }
+
+  return normalizedEmail;
 }
 
 function hash(value: string) {
@@ -49,7 +64,7 @@ export const EmailVerificationService = {
     requestIp: string,
     sender: EmailSender = emailSender
   ) {
-    const email = normalizeEmail(rawEmail);
+    const email = normalizeMjuEmail(rawEmail);
     const now = new Date();
     const hourAgo = new Date(now.getTime() - HOUR_MS);
     const ipHash = hash(requestIp || "unknown");
@@ -116,7 +131,7 @@ export const EmailVerificationService = {
   },
 
   async verifyCode(rawEmail: string, code: string) {
-    const email = normalizeEmail(rawEmail);
+    const email = normalizeMjuEmail(rawEmail);
     const verification = await EmailVerificationRepo.findLatest(email);
 
     if (!verification || verification.verifiedAt) {
@@ -176,7 +191,7 @@ export const EmailVerificationService = {
     token: string,
     operation: (transaction: import("sequelize").Transaction) => Promise<unknown>
   ) {
-    const email = normalizeEmail(rawEmail);
+    const email = normalizeMjuEmail(rawEmail);
     return await sequelize.transaction(async (transaction) => {
       const verification =
         await EmailVerificationRepo.findByTokenHashForUpdate(

@@ -68,7 +68,9 @@
           "email": {
             "type": "string",
             "format": "email",
-            "example": "user@example.com"
+            "pattern": "^[^@\\s]+@mju\\.ac\\.kr$",
+            "description": "명지대학교 이메일만 허용합니다. 앞뒤 공백 제거 후 소문자로 정규화합니다.",
+            "example": "student@mju.ac.kr"
           }
         }
       },
@@ -104,7 +106,9 @@
           "email": {
             "type": "string",
             "format": "email",
-            "example": "user@example.com"
+            "pattern": "^[^@\\s]+@mju\\.ac\\.kr$",
+            "description": "인증번호를 발급받은 명지대학교 이메일(@mju.ac.kr)",
+            "example": "student@mju.ac.kr"
           },
           "code": {
             "type": "string",
@@ -3635,7 +3639,28 @@
             }
           },
           "400": {
-            "description": "이메일 형식 오류"
+            "description": "이메일 형식 오류 또는 @mju.ac.kr 이외 도메인 (VALIDATION_ERROR 또는 INVALID_MJU_EMAIL)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "VALIDATION_ERROR",
+                  "message": "VALIDATION_ERROR",
+                  "details": {
+                    "issues": [
+                      {
+                        "path": [
+                          "email"
+                        ],
+                        "message": "명지대학교 이메일(@mju.ac.kr)만 사용할 수 있습니다."
+                      }
+                    ]
+                  }
+                }
+              }
+            }
           },
           "429": {
             "description": "발송 횟수 제한"
@@ -3675,7 +3700,14 @@
             }
           },
           "400": {
-            "description": "인증 실패"
+            "description": "이메일 형식/도메인 오류 또는 인증 실패 (VALIDATION_ERROR, INVALID_MJU_EMAIL, EMAIL_VERIFICATION_FAILED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           },
           "410": {
             "description": "인증번호 만료"
@@ -6285,8 +6317,9 @@
                       "email": {
                         "type": "string",
                         "format": "email",
-                        "example": "user@example.com",
-                        "description": "인증을 완료한 이메일 주소"
+                        "pattern": "^[^@\\\\s]+@mju\\\\.ac\\\\.kr$",
+                        "example": "student@mju.ac.kr",
+                        "description": "인증을 완료한 명지대학교 이메일 주소 (@mju.ac.kr 전용)"
                       },
                       "passwordHash": {
                         "type": "string",
@@ -6328,7 +6361,7 @@
               },
               "example": {
                 "user": {
-                  "email": "user@example.com",
+                  "email": "student@mju.ac.kr",
                   "passwordHash": "mypassword123",
                   "nickname": "홍길동",
                   "studentId": "20241234",
@@ -6352,7 +6385,7 @@
             }
           },
           "400": {
-            "description": "유효성 검증 실패",
+            "description": "유효성 검증 실패 또는 @mju.ac.kr 이외 도메인 (VALIDATION_ERROR 또는 INVALID_MJU_EMAIL)",
             "content": {
               "application/json": {
                 "schema": {

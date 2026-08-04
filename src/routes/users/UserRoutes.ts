@@ -81,8 +81,9 @@ userRouter.get("/", getAllUsers);
  *                   email:
  *                     type: string
  *                     format: email
- *                     example: "user@example.com"
- *                     description: 인증을 완료한 이메일 주소
+ *                     pattern: '^[^@\\s]+@mju\\.ac\\.kr$'
+ *                     example: "student@mju.ac.kr"
+ *                     description: 인증을 완료한 명지대학교 이메일 주소 (@mju.ac.kr 전용)
  *                   passwordHash:
  *                     type: string
  *                     minLength: 8
@@ -113,7 +114,7 @@ userRouter.get("/", getAllUsers);
  *                     description: 이메일 인증 성공 후 발급받은 일회성 토큰
  *           example:
  *             user:
- *               email: "user@example.com"
+ *               email: "student@mju.ac.kr"
  *               passwordHash: "mypassword123"
  *               nickname: "홍길동"
  *               studentId: "20241234"
@@ -128,7 +129,7 @@ userRouter.get("/", getAllUsers);
  *             schema:
  *               $ref: '#/components/schemas/User'
  *       400:
- *         description: 유효성 검증 실패
+ *         description: 유효성 검증 실패 또는 @mju.ac.kr 이외 도메인 (VALIDATION_ERROR 또는 INVALID_MJU_EMAIL)
  *         content:
  *           application/json:
  *             schema:

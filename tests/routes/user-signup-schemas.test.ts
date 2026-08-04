@@ -3,7 +3,7 @@ import { createUserSchema } from "../../src/routes/common/validation/user-schema
 
 const validRequest = {
   user: {
-    email: " User@Example.COM ",
+    email: " Student@MJU.AC.KR ",
     passwordHash: "password123",
     nickname: "다마라",
     studentId: "20241234",
@@ -14,7 +14,7 @@ const validRequest = {
 describe("createUserSchema email verification", () => {
   it("인증 토큰을 필수로 받고 이메일을 정규화한다", () => {
     const parsed = createUserSchema.parse(validRequest);
-    expect(parsed.user.email).toBe("user@example.com");
+    expect(parsed.user.email).toBe("student@mju.ac.kr");
     expect(parsed.user.emailVerificationToken).toBe("verification-token");
   });
 
@@ -24,5 +24,21 @@ describe("createUserSchema email verification", () => {
     delete user.emailVerificationToken;
 
     expect(createUserSchema.safeParse(request).success).toBe(true);
+  });
+
+  it.each([
+    "domain-check@example.invalid",
+    "user@example.com",
+    "user@sub.mju.ac.kr",
+    "user@mju.ac.kr.evil.com",
+  ])("비명지대 이메일 %s로 회원가입할 수 없다", (email) => {
+    expect(
+      createUserSchema.safeParse({
+        user: {
+          ...validRequest.user,
+          email,
+        },
+      }).success
+    ).toBe(false);
   });
 });

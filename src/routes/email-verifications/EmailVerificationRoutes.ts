@@ -26,7 +26,18 @@ const emailVerificationRouter = Router();
  *             schema:
  *               $ref: '#/components/schemas/SendEmailVerificationResponse'
  *       400:
- *         description: 이메일 형식 오류
+ *         description: 이메일 형식 오류 또는 @mju.ac.kr 이외 도메인 (VALIDATION_ERROR 또는 INVALID_MJU_EMAIL)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               error: VALIDATION_ERROR
+ *               message: VALIDATION_ERROR
+ *               details:
+ *                 issues:
+ *                   - path: [email]
+ *                     message: 명지대학교 이메일(@mju.ac.kr)만 사용할 수 있습니다.
  *       429:
  *         description: 발송 횟수 제한
  *       502:
@@ -54,7 +65,11 @@ emailVerificationRouter.post("/send", sendEmailVerification);
  *             schema:
  *               $ref: '#/components/schemas/VerifyEmailVerificationResponse'
  *       400:
- *         description: 인증 실패
+ *         description: 이메일 형식/도메인 오류 또는 인증 실패 (VALIDATION_ERROR, INVALID_MJU_EMAIL, EMAIL_VERIFICATION_FAILED)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       410:
  *         description: 인증번호 만료
  *       423:

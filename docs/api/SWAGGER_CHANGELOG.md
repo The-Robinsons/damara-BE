@@ -21,6 +21,22 @@ src/config/swagger.ts
 src/routes/**/*.ts
 ```
 
+## 2026-08-04 - 명지대학교 이메일 도메인 검증 강화
+
+### 변경 요약
+
+회원가입 이메일 인증에 사용하는 주소를 `@mju.ac.kr` 도메인으로 제한했다. 발송, 인증번호 확인, 회원가입 요청은 모두 이메일의 앞뒤 공백을 제거하고 소문자로 변환한 뒤 같은 도메인 규칙을 적용한다.
+
+### 영향 API
+
+```text
+POST /api/auth/email-verifications/send
+POST /api/auth/email-verifications/verify
+POST /api/users
+```
+
+비명지대 이메일은 메일 발송과 회원 생성 전에 `400 VALIDATION_ERROR` 또는 서비스 방어 검증의 `400 INVALID_MJU_EMAIL`로 거부된다. 인증 토큰은 인증된 이메일과 회원가입 이메일이 일치할 때만 소비된다.
+
 배포 환경에서는 다음 URL로 최종 OpenAPI JSON을 확인한다.
 
 ```text

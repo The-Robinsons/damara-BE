@@ -30,7 +30,7 @@
 → 사용자 생성과 동시에 인증 토큰 소비
 ```
 
-이메일은 앞뒤 공백을 제거하고 소문자로 정규화한다. 인증번호 발송, 인증번호 확인, 회원가입 요청에서 모두 동일한 정규화 규칙을 적용한다.
+이메일은 앞뒤 공백을 제거하고 소문자로 정규화한 뒤 정확히 `@mju.ac.kr`로 끝나는지 확인한다. 인증번호 발송, 인증번호 확인, 회원가입 요청에서 모두 동일한 규칙을 적용하며 비명지대 이메일은 메일 발송 전에 거부한다.
 
 ---
 
@@ -192,7 +192,7 @@ Content-Type: application/json
 
 ```json
 {
-  "email": "user@example.com"
+  "email": "student@mju.ac.kr"
 }
 ```
 
@@ -214,7 +214,7 @@ Content-Type: application/json
 
 | HTTP | 오류 코드 | 조건 |
 |---|---|---|
-| 400 | `VALIDATION_ERROR` | 이메일 형식 오류 |
+| 400 | `VALIDATION_ERROR` 또는 `INVALID_MJU_EMAIL` | 이메일 형식 오류 또는 `@mju.ac.kr` 이외 도메인 |
 | 429 | `EMAIL_VERIFICATION_RATE_LIMITED` | 재발송 또는 발송량 제한 |
 | 502 | `EMAIL_DELIVERY_FAILED` | 메일 제공자 전송 실패 |
 
@@ -229,7 +229,7 @@ Content-Type: application/json
 
 ```json
 {
-  "email": "user@example.com",
+  "email": "student@mju.ac.kr",
   "code": "381204"
 }
 ```
@@ -252,7 +252,7 @@ Content-Type: application/json
 
 | HTTP | 오류 코드 | 조건 |
 |---|---|---|
-| 400 | `VALIDATION_ERROR` | 이메일 또는 인증번호 형식 오류 |
+| 400 | `VALIDATION_ERROR` 또는 `INVALID_MJU_EMAIL` | 이메일/인증번호 형식 오류 또는 `@mju.ac.kr` 이외 도메인 |
 | 400 | `EMAIL_VERIFICATION_FAILED` | 인증번호 불일치 또는 유효한 요청 없음 |
 | 410 | `VERIFICATION_CODE_EXPIRED` | 인증번호 만료 |
 | 423 | `VERIFICATION_ATTEMPTS_EXCEEDED` | 최대 입력 횟수 초과 |
@@ -264,7 +264,7 @@ Content-Type: application/json
 ```json
 {
   "user": {
-    "email": "user@example.com",
+    "email": "student@mju.ac.kr",
     "passwordHash": "password123",
     "nickname": "다마라",
     "emailVerificationToken": "opaque-one-time-token"
@@ -278,6 +278,7 @@ Content-Type: application/json
 |---|---|---|
 | 401 | `EMAIL_VERIFICATION_REQUIRED` | 인증 토큰 누락 |
 | 401 | `INVALID_EMAIL_VERIFICATION_TOKEN` | 토큰 불일치 또는 변조 |
+| 400 | `VALIDATION_ERROR` 또는 `INVALID_MJU_EMAIL` | `@mju.ac.kr` 이외 이메일로 회원가입 요청 |
 | 410 | `EMAIL_VERIFICATION_EXPIRED` | 인증 토큰 만료 |
 | 409 | `EMAIL_ALREADY_EXISTS` | 이미 가입된 이메일 |
 

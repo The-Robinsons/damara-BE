@@ -1,17 +1,12 @@
 import z from "zod";
-
-const normalizedEmailSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .pipe(z.email());
+import { mjuEmailSchema } from "../../../common/validation/mju-email";
 
 export const sendEmailVerificationSchema = z.object({
-  email: normalizedEmailSchema,
+  email: mjuEmailSchema,
 });
 
 export const verifyEmailVerificationSchema = z.object({
-  email: normalizedEmailSchema,
+  email: mjuEmailSchema,
   code: z.string().regex(/^\d{6}$/, "인증번호는 6자리 숫자여야 합니다."),
 });
 

@@ -1,9 +1,10 @@
 import z from "zod";
+import { mjuEmailSchema } from "../../../common/validation/mju-email";
 
 // 유저 생성 요청 스키마 정의
 export const createUserSchema = z.object({
   user: z.object({
-    email: z.string().trim().toLowerCase().pipe(z.email()),
+    email: mjuEmailSchema,
     passwordHash: z.string().min(8), //비밀번호는 8자 이상
     nickname: z.string().min(2),
     department: z.string().optional(),

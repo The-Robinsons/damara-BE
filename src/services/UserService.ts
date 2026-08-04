@@ -30,7 +30,10 @@ import {
 } from "../types/participant-status";
 import { TrustEventType } from "../models/TrustEvent";
 import ENV from "../common/constants/ENV";
-import { EmailVerificationService, normalizeEmail } from "./EmailVerificationService";
+import {
+  EmailVerificationService,
+  normalizeMjuEmail,
+} from "./EmailVerificationService";
 
 type RegisterUserInput = UserCreationAttributes & {
   emailVerificationToken?: string;
@@ -336,7 +339,7 @@ export const UserService = {
    */
   async registerUser(data: RegisterUserInput) {
     const { emailVerificationToken, ...userData } = data;
-    userData.email = normalizeEmail(userData.email);
+    userData.email = normalizeMjuEmail(userData.email);
 
     if (ENV.EmailVerificationRequired && !emailVerificationToken) {
       throw new RouteError(

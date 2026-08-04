@@ -41,6 +41,7 @@ import "./models/PostImage";
 import "./models/ChatRoom";
 import "./models/Message";
 import "./models/PostParticipant";
+import "./models/TradeReview";
 import "./models/TrustEvent";
 import "./models/UserSettings";
 import NoticeModel from "./models/Notice";
@@ -191,7 +192,24 @@ async function ensureParticipantStatusColumn() {
         }
       );
       logger.info("✓ post_participants.participant_status 컬럼 추가 완료");
-      return;
+    } else {
+      await queryInterface.changeColumn(
+        "post_participants",
+        "participant_status",
+        {
+          type: DataTypes.ENUM(...PARTICIPANT_STATUSES),
+          allowNull: false,
+          defaultValue: "participating",
+        }
+      );
+    }
+
+    if (!table.received_at) {
+      await queryInterface.addColumn("post_participants", "received_at", {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+      });
     }
 
     logger.info("✓ post_participants.participant_status 컬럼 확인 완료");

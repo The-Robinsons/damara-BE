@@ -29,7 +29,69 @@ const postRouter = Router();
 
 // 디버깅: 라우트 등록 확인
 import logger from "jet-logger";
+import {
+  createTradeReview,
+  getReviewEligibility,
+} from "../../controllers/trade-review.controller";
 logger.info("PostRoutes: 라우터 초기화됨");
+
+/**
+ * @swagger
+ * /api/posts/{id}/reviews/eligibility:
+ *   get:
+ *     summary: 거래 상호평가 대상 및 상태 조회
+ *     tags: [Reviews]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *       - in: header
+ *         name: X-User-Id
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 postId: { type: string, format: uuid }
+ *                 targets:
+ *                   type: array
+ *                   items: { $ref: '#/components/schemas/ReviewEligibilityTarget' }
+ */
+postRouter.get("/:id/reviews/eligibility", getReviewEligibility);
+
+/**
+ * @swagger
+ * /api/posts/{id}/reviews:
+ *   post:
+ *     summary: 거래 상호평가 제출
+ *     tags: [Reviews]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *       - in: header
+ *         name: X-User-Id
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { $ref: '#/components/schemas/TradeReviewRequest' }
+ *     responses:
+ *       201:
+ *         description: 제출 성공
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/TradeReview' }
+ *       409: { description: 중복 제출 }
+ */
+postRouter.post("/:id/reviews", createTradeReview);
 
 /**
  * @swagger
@@ -491,6 +553,13 @@ postRouter.put("/:id", updatePost);
  *           type: string
  *           format: uuid
  *         description: 게시글 UUID
+ *       - in: header
+ *         name: X-User-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: 게시글 작성자 UUID
  *     requestBody:
  *       required: true
  *       content:
@@ -499,21 +568,14 @@ postRouter.put("/:id", updatePost);
  *             type: object
  *             required:
  *               - status
- *               - authorId
  *             properties:
  *               status:
  *                 type: string
  *                 enum: [open, closed, in_progress, completed, cancelled]
  *                 description: 변경할 상태
  *                 example: "closed"
- *               authorId:
- *                 type: string
- *                 format: uuid
- *                 description: 작성자 UUID (권한 확인용)
- *                 example: "a87522bd-bc79-47b0-a73f-46ea4068a158"
  *           example:
  *             status: "closed"
- *             authorId: "a87522bd-bc79-47b0-a73f-46ea4068a158"
  *     responses:
  *       200:
  *         description: 상태 변경 성공
@@ -565,8 +627,15 @@ logger.info("✓ PATCH /api/posts/:id/status 라우트 등록됨");
  *         required: true
  *         schema:
  *           type: string
+ *       - in: header
+ *         name: X-User-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: 게시글 작성자 UUID
  *     responses:
- *       200:
+ *       204:
  *         description: 삭제 성공
  *       404:
  *         description: 상품을 찾을 수 없음
@@ -638,7 +707,7 @@ postRouter.get("/:id/participants", getParticipants);
  * /api/posts/{id}/participants/{userId}/status:
  *   patch:
  *     summary: 참여자 상태 변경
- *     description: 작성자 또는 해당 참여자 본인이 참여자별 진행 상태를 변경합니다.
+ *     description: 모집자는 입금대기와 수령예정 단계를 순서대로 변경하고, 참여자는 수령예정 상태에서 수령완료를 확정합니다.
  *     tags: [Posts]
  *     parameters:
  *       - in: path
@@ -656,11 +725,12 @@ postRouter.get("/:id/participants", getParticipants);
  *           format: uuid
  *         description: 상태를 변경할 참여자 UUID
  *       - in: header
- *         name: x-user-id
+ *         name: X-User-Id
+ *         required: true
  *         schema:
  *           type: string
  *           format: uuid
- *         description: 상태 변경 요청자 UUID. body.actorUserId 대신 사용할 수 있습니다.
+ *         description: 상태 변경 요청자 UUID
  *     requestBody:
  *       required: true
  *       content:
@@ -672,13 +742,8 @@ postRouter.get("/:id/participants", getParticipants);
  *             properties:
  *               participantStatus:
  *                 $ref: '#/components/schemas/ParticipantStatus'
- *               actorUserId:
- *                 type: string
- *                 format: uuid
- *                 description: 상태 변경 요청자 UUID. x-user-id 헤더를 쓰면 생략할 수 있습니다.
  *           example:
  *             participantStatus: payment_pending
- *             actorUserId: "a87522bd-bc79-47b0-a73f-46ea4068a158"
  *     responses:
  *       200:
  *         description: 참여자 상태 변경 성공
@@ -1092,6 +1157,13 @@ postRouter.delete("/:postId/favorite/:userId", removeFavorite);
  *         schema:
  *           type: string
  *           format: uuid
+ *       - in: header
+ *         name: X-User-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: 참여 사용자 UUID. body.userId와 같아야 합니다.
  *     requestBody:
  *       required: true
  *       content:
@@ -1140,6 +1212,13 @@ postRouter.post("/:id/participate", joinPost);
  *         schema:
  *           type: string
  *           format: uuid
+ *       - in: header
+ *         name: X-User-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: 취소하는 참여자 UUID. path userId와 같아야 합니다.
  *     responses:
  *       200:
  *         description: 참여 취소 성공

@@ -70,6 +70,10 @@ const options: swaggerJsdoc.Options = {
         description: "사용자 API",
       },
       {
+        name: "Reviews",
+        description: "거래 상호평가 API",
+      },
+      {
         name: "Upload",
         description: "이미지 업로드 API",
       },
@@ -100,6 +104,157 @@ const options: swaggerJsdoc.Options = {
     ],
     components: {
       schemas: {
+        TradeReviewRequest: {
+          type: "object",
+          required: ["revieweeId", "rating"],
+          properties: {
+            revieweeId: { type: "string", format: "uuid" },
+            rating: {
+              type: "string",
+              enum: ["positive", "neutral", "negative"],
+            },
+            tags: {
+              type: "array",
+              maxItems: 5,
+              uniqueItems: true,
+              items: {
+                type: "string",
+                enum: [
+                  "ACCURATE_DESCRIPTION",
+                  "CLEAR_SETTLEMENT",
+                  "GOOD_PROGRESS_UPDATES",
+                  "FAST_RESPONSE",
+                  "CLEAR_PICKUP_GUIDE",
+                  "ON_TIME",
+                  "WELL_PREPARED",
+                  "KIND_COMMUNICATION",
+                  "INACCURATE_DESCRIPTION",
+                  "UNCLEAR_SETTLEMENT",
+                  "MISSING_PROGRESS_UPDATES",
+                  "SLOW_RESPONSE",
+                  "FREQUENT_SCHEDULE_CHANGES",
+                  "LATE_FOR_PICKUP",
+                  "POOR_PREPARATION",
+                  "UNFRIENDLY_COMMUNICATION",
+                  "PAYMENT_ON_TIME",
+                  "EARLY_CHANGE_NOTICE",
+                  "SMOOTH_TRANSACTION",
+                  "LATE_PAYMENT",
+                  "SAME_DAY_CANCELLATION",
+                ],
+              },
+              description: "긍정·부정 평가는 1개 이상, 보통 평가는 빈 배열",
+            },
+          },
+        },
+        TradeReviewUpdateRequest: {
+          type: "object",
+          required: ["rating"],
+          properties: {
+            rating: {
+              type: "string",
+              enum: ["positive", "neutral", "negative"],
+            },
+            tags: {
+              type: "array",
+              maxItems: 5,
+              uniqueItems: true,
+              items: { type: "string" },
+            },
+          },
+        },
+        TradeReview: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            postId: { type: "string", format: "uuid" },
+            revieweeId: { type: "string", format: "uuid" },
+            reviewerRole: { type: "string", enum: ["organizer", "participant"] },
+            revieweeRole: { type: "string", enum: ["organizer", "participant"] },
+            rating: { type: "string", enum: ["positive", "neutral", "negative"] },
+            tags: { type: "array", items: { type: "string" } },
+            status: { type: "string", enum: ["pending", "published", "hidden", "disputed", "invalidated"] },
+            submittedAt: { type: "string", format: "date-time" },
+            publishedAt: { type: "string", format: "date-time", nullable: true },
+            expiresAt: { type: "string", format: "date-time" },
+          },
+        },
+        ReviewAllowedTags: {
+          type: "object",
+          properties: {
+            positive: { type: "array", items: { type: "string" } },
+            neutral: { type: "array", items: { type: "string" } },
+            negative: { type: "array", items: { type: "string" } },
+          },
+        },
+        ReviewEligibilityTarget: {
+          type: "object",
+          properties: {
+            reviewee: {
+              type: "object",
+              properties: {
+                id: { type: "string", format: "uuid" },
+                nickname: { type: "string" },
+                avatarUrl: { type: "string", nullable: true },
+              },
+            },
+            revieweeRole: {
+              type: "string",
+              enum: ["organizer", "participant"],
+            },
+            allowedTags: { $ref: "#/components/schemas/ReviewAllowedTags" },
+            status: {
+              type: "string",
+              enum: [
+                "not_submitted",
+                "pending",
+                "published",
+                "hidden",
+                "disputed",
+                "invalidated",
+                "expired",
+              ],
+            },
+            reviewId: { type: "string", format: "uuid", nullable: true },
+            expiresAt: { type: "string", format: "date-time", nullable: true },
+          },
+        },
+        ReviewSummary: {
+          type: "object",
+          properties: {
+            userId: { type: "string", format: "uuid" },
+            trustScore: { type: "integer", minimum: 0, maximum: 100 },
+            trustGrade: { type: "number", minimum: 2.5, maximum: 4.5 },
+            reviewCount: { type: "integer", minimum: 0 },
+            confidence: { type: "string", enum: ["low", "medium", "high"] },
+            ratings: {
+              type: "object",
+              properties: {
+                positive: { type: "integer", minimum: 0 },
+                neutral: { type: "integer", minimum: 0 },
+                negative: { type: "integer", minimum: 0 },
+              },
+            },
+            tags: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  tag: { type: "string" },
+                  count: { type: "integer", minimum: 1 },
+                },
+              },
+            },
+            roles: {
+              type: "object",
+              description: "모집자와 참여자로 받은 평가를 구분한 요약",
+              properties: {
+                organizer: { type: "object", additionalProperties: true },
+                participant: { type: "object", additionalProperties: true },
+              },
+            },
+          },
+        },
         SendEmailVerificationRequest: {
           type: "object",
           required: ["email"],
@@ -781,6 +936,9 @@ const options: swaggerJsdoc.Options = {
               enum: [
                 "post_completed_author",
                 "post_completed_participant",
+                "participant_received",
+                "post_review_aggregate_author",
+                "trade_review_participant",
                 "post_cancelled_by_author",
                 "post_deleted_by_author",
                 "participant_cancelled",
@@ -794,7 +952,12 @@ const options: swaggerJsdoc.Options = {
             scoreChange: {
               type: "integer",
               description: "내부 신뢰점수 변화량",
-              example: 10,
+              example: 5,
+            },
+            effectiveScoreChange: {
+              type: "integer",
+              description: "0~100 범위 보정 후 실제 반영된 점수 변화량",
+              example: 5,
             },
             previousScore: {
               type: "integer",
@@ -808,7 +971,7 @@ const options: swaggerJsdoc.Options = {
               description: "변경 후 내부 신뢰점수",
               minimum: 0,
               maximum: 100,
-              example: 60,
+              example: 55,
             },
             previousGrade: {
               type: "number",
@@ -824,7 +987,7 @@ const options: swaggerJsdoc.Options = {
               description: "변경 후 표시 신뢰학점",
               minimum: 2.5,
               maximum: 4.5,
-              example: 3.7,
+              example: 3.6,
             },
             reason: {
               type: "string",
@@ -837,6 +1000,30 @@ const options: swaggerJsdoc.Options = {
               nullable: true,
               description: "이벤트별 추가 데이터",
               additionalProperties: true,
+            },
+            sourceReviewId: {
+              type: "string",
+              format: "uuid",
+              nullable: true,
+              description: "점수 변화의 근거가 된 거래 평가 UUID",
+            },
+            policyVersion: {
+              type: "string",
+              example: "trust-v2",
+            },
+            occurredAt: {
+              type: "string",
+              format: "date-time",
+            },
+            expiresAt: {
+              type: "string",
+              format: "date-time",
+              nullable: true,
+            },
+            idempotencyKey: {
+              type: "string",
+              nullable: true,
+              description: "동일 사건의 중복 점수 반영을 막는 내부 키",
             },
             createdAt: {
               type: "string",

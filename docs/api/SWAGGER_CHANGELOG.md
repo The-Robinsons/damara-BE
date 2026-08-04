@@ -21,6 +21,61 @@ src/config/swagger.ts
 src/routes/**/*.ts
 ```
 
+## 2026-08-05 - 신뢰학점 2.0 상호평가 API 추가
+
+### 변경 요약
+
+수령 완료 거래의 모집자·참여자 상호평가, 평가 대기 목록, 공개 평가 요약을 제공하는 API를 추가했다. 평가 작성자 ID는 세션을 우선 사용하고 기존 연동 호환을 위해 `X-User-Id` 헤더도 지원한다.
+
+평가 가능 여부 응답의 각 대상에는 역할별 `allowedTags.positive`, `allowedTags.neutral`, `allowedTags.negative`를 포함하므로 프런트엔드는 태그 목록을 별도로 하드코딩하지 않아도 된다.
+
+공개 평가 요약은 전체 통계와 함께 `roles.organizer`, `roles.participant` 통계를 제공해 모집자·참여자 역할별 평가를 구분한다.
+
+### 신규 API
+
+```text
+GET  /api/users/me/pending-reviews
+GET  /api/users/{id}/review-summary
+GET  /api/posts/{id}/reviews/eligibility
+POST /api/posts/{id}/reviews
+PUT  /api/reviews/{id}
+```
+
+평가 수정 요청은 평가 대상 ID를 다시 받지 않으며 `rating`, `tags`만 변경한다. 작성자와 대상은 저장된 평가 관계를 기준으로 검증한다.
+
+### 기존 API 변경
+
+```text
+PATCH /api/posts/{id}/participants/{userId}/status
+- received는 참여자 본인만 확정
+- participating → payment_pending → pickup_ready는 모집자가 순서대로 변경
+- pickup_ready → received는 참여자 본인이 확정하며 단계 건너뛰기와 역행을 차단
+- body.actorUserId를 제거하고 세션 또는 X-User-Id 인증 사용자를 기준으로 권한 확인
+
+PATCH /api/posts/{id}/status
+- completed 전환에는 received 참여자 1명 이상과 미해결 예외 0건 필요
+- body.authorId를 제거하고 세션 또는 X-User-Id 인증 사용자를 기준으로 권한 확인
+
+PUT /api/posts/{id}
+- status 변경 요청은 400 POST_STATUS_ENDPOINT_REQUIRED
+
+DELETE /api/posts/{id}
+- 참여자가 있으면 409 POST_HAS_PARTICIPANTS_CANCEL_REQUIRED
+- 작성자 본인만 삭제 가능
+
+POST /api/posts/{id}/participate
+- 세션 또는 X-User-Id 인증 사용자만 본인 계정으로 참여 가능
+
+DELETE /api/posts/{id}/participate/{userId}
+- 세션 또는 X-User-Id 인증 사용자와 path userId가 같은 경우만 취소 가능
+```
+
+### 점수 정책
+
+모집자는 완료 +5점과 모집 단위 평가 합산 -10~+5점, 참여자는 수령 +4점과 모집자 평가 -2~+1점을 적용한다. 같은 사건은 멱등 키로 한 번만 적용된다.
+
+참여 취소는 수령 예정 시각을 기준으로 24시간 이내 여부를 판단하며, 수령 일시가 없는 기존 게시글은 모집 마감 시각을 대체 기준으로 사용한다.
+
 ## 2026-08-04 - 명지대학교 이메일 도메인 검증 강화
 
 ### 변경 요약

@@ -1,4 +1,8 @@
 import { Router } from "express";
+import {
+  getPendingReviews,
+  getReviewSummary,
+} from "../../controllers/trade-review.controller";
 import { upload, uploadWithErrorHandling } from "../../config/multer";
 
 import {
@@ -21,6 +25,58 @@ import {
 import { getFavorites } from "../../controllers/favorite.controller";
 
 const userRouter = Router();
+
+/**
+ * @swagger
+ * /api/users/me/pending-reviews:
+ *   get:
+ *     summary: 내가 작성할 수 있는 거래 평가 조회
+ *     tags: [Reviews]
+ *     parameters:
+ *       - in: header
+ *         name: X-User-Id
+ *         schema: { type: string, format: uuid }
+ *         description: 세션이 없을 때 사용하는 현재 사용자 UUID
+ *     responses:
+ *       200:
+ *         description: 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 reviews:
+ *                   type: array
+ *                   items:
+ *                     allOf:
+ *                       - $ref: '#/components/schemas/ReviewEligibilityTarget'
+ *                       - type: object
+ *                         properties:
+ *                           postId: { type: string, format: uuid }
+ *                           postTitle: { type: string }
+ *                 total: { type: integer, minimum: 0 }
+ */
+userRouter.get("/me/pending-reviews", getPendingReviews);
+
+/**
+ * @swagger
+ * /api/users/{id}/review-summary:
+ *   get:
+ *     summary: 사용자가 받은 공개 평가 요약 조회
+ *     tags: [Reviews]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: 조회 성공
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/ReviewSummary' }
+ */
+userRouter.get("/:id/review-summary", getReviewSummary);
 
 /**
  * @swagger

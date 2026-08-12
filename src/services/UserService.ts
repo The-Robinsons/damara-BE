@@ -25,7 +25,7 @@ import {
   MyPostsTab,
 } from "../types/my-posts";
 import {
-  PARTICIPANT_STATUS_LABELS,
+  getParticipantStatusMeta,
   ParticipantStatus,
 } from "../types/participant-status";
 import { TrustEventType } from "../models/TrustEvent";
@@ -768,10 +768,9 @@ export const UserService = {
             myPostStatus: participant.participantStatus,
             participantId: participant.id,
             participantStatus: participant.participantStatus,
-            participantStatusLabel:
-              PARTICIPANT_STATUS_LABELS[
-                participant.participantStatus as ParticipantStatus
-              ],
+            ...getParticipantStatusMeta(
+              participant.participantStatus as ParticipantStatus
+            ),
             participatedAt: participant.createdAt,
           };
         })

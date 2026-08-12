@@ -15,8 +15,9 @@ import { PostExceptionRepo } from "../repos/PostExceptionRepo";
 import { PostListOptions } from "../types/post-list";
 import {
   ParticipantStatus,
-  PARTICIPANT_STATUS_LABELS,
+  PARTICIPANT_PROCESS_GUIDE,
   canTransitionParticipantStatus,
+  getParticipantStatusMeta,
 } from "../types/participant-status";
 import { GroupBuyMode, GroupBuyType } from "../types/group-buy";
 import {
@@ -565,8 +566,7 @@ function toParticipantListItem(participant: PostParticipantListSource) {
     joinedAt: participant.createdAt,
     status: "joined",
     participantStatus: participant.participantStatus,
-    participantStatusLabel:
-      PARTICIPANT_STATUS_LABELS[participant.participantStatus],
+    ...getParticipantStatusMeta(participant.participantStatus),
     user: user
       ? {
           id: user.id,
@@ -635,6 +635,7 @@ export const PostService = {
       id: participant.id,
       userId: participant.userId,
       participantStatus: participant.participantStatus,
+      ...getParticipantStatusMeta(participant.participantStatus),
       joinedAt: participant.createdAt,
       user: toPublicUserProfile(participant.user),
     }));
@@ -664,6 +665,7 @@ export const PostService = {
       participantCount: participantProfiles.length,
       participantsPreview,
       participantsTotal: participantProfiles.length,
+      participantProcessGuide: PARTICIPANT_PROCESS_GUIDE,
       exceptionSummary,
       favoriteCount,
       isFavorite,
@@ -802,7 +804,7 @@ export const PostService = {
    */
   async updatePostStatus(
     id: string,
-    newStatus: "open" | "closed" | "in_progress" | "completed" | "cancelled",
+    newStatus: "open" | "closed" | "completed" | "cancelled",
     authorId: string
   ) {
     const post = await PostRepo.findById(id);
@@ -826,7 +828,8 @@ export const PostService = {
     if (ENABLE_STATUS_TRANSITION_RULES) {
       const validTransitions: Record<string, string[]> = {
         open: ["closed", "cancelled"],
-        closed: ["in_progress", "cancelled"],
+        closed: ["completed", "cancelled"],
+        // 기존 데이터 호환용. 신규 요청에서는 in_progress를 받지 않는다.
         in_progress: ["completed", "cancelled"],
         completed: [], // 변경 불가
         cancelled: [], // 변경 불가
@@ -873,14 +876,15 @@ export const PostService = {
     }
 
     if (newStatus === "completed") {
-      const [receivedCount, openExceptionCount] = await Promise.all([
+      const [participantCount, receivedCount, openExceptionCount] = await Promise.all([
+        PostParticipantRepo.countByPostId(id),
         PostParticipantRepo.countByPostIdAndStatus(id, "received"),
         PostExceptionRepo.countOpenByPostId(id),
       ]);
-      if (receivedCount === 0) {
+      if (participantCount === 0 || receivedCount !== participantCount) {
         throw new RouteError(
           HttpStatusCodes.BAD_REQUEST,
-          "RECEIVED_PARTICIPANT_REQUIRED"
+          "ALL_PARTICIPANTS_RECEIVED_REQUIRED"
         );
       }
       if (openExceptionCount > 0) {
@@ -1135,7 +1139,11 @@ export const PostParticipantService = {
    * 사용자가 참여한 게시글 목록 조회
    */
   async getParticipatedPosts(userId: string) {
-    return await PostParticipantRepo.findByUserId(userId);
+    const participants = await PostParticipantRepo.findByUserId(userId);
+    return participants.map((participant) => ({
+      ...participant,
+      ...getParticipantStatusMeta(participant.participantStatus),
+    }));
   },
 
   /**
@@ -1210,7 +1218,10 @@ export const PostParticipantService = {
     if (participantStatus === "received") {
       await TrustService.recordParticipantReceived(postId, userId);
     }
-    return participant;
+    return {
+      ...participant,
+      ...getParticipantStatusMeta(participant.participantStatus),
+    };
   },
 
   /**

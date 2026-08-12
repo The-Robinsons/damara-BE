@@ -79,6 +79,7 @@ const envSchema = z.object({
     .transform((value) => value === "true"),
   SMTP_USER: z.string().default(""),
   SMTP_PASSWORD: z.string().default(""),
+  REPORT_RECIPIENT_EMAIL: z.string().email().optional(),
   EMAIL_VERIFICATION_CODE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   EMAIL_VERIFICATION_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   EMAIL_VERIFICATION_RESEND_SECONDS: z.coerce.number().int().positive().default(60),
@@ -120,6 +121,7 @@ const parsed = envSchema.parse({
   SMTP_SECURE: process.env.SMTP_SECURE,
   SMTP_USER: process.env.SMTP_USER,
   SMTP_PASSWORD: process.env.SMTP_PASSWORD,
+  REPORT_RECIPIENT_EMAIL: process.env.REPORT_RECIPIENT_EMAIL,
   EMAIL_VERIFICATION_CODE_TTL_SECONDS:
     process.env.EMAIL_VERIFICATION_CODE_TTL_SECONDS,
   EMAIL_VERIFICATION_TOKEN_TTL_SECONDS:
@@ -179,6 +181,7 @@ const ENV = {
   SmtpSecure: parsed.SMTP_SECURE,
   SmtpUser: parsed.SMTP_USER,
   SmtpPassword: parsed.SMTP_PASSWORD,
+  ReportRecipientEmail: parsed.REPORT_RECIPIENT_EMAIL || parsed.MAIL_FROM,
   EmailVerificationCodeTtlSeconds:
     parsed.EMAIL_VERIFICATION_CODE_TTL_SECONDS,
   EmailVerificationTokenTtlSeconds:

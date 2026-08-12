@@ -1,5 +1,6 @@
 import z from "zod";
 import { MESSAGE_TYPES } from "../../../types/chat";
+import { CHAT_REPORT_CATEGORIES } from "../../../types/chat-report";
 
 /**
  * 채팅방 생성 요청 스키마
@@ -36,3 +37,21 @@ export const updateMessageSchema = z.object({
 });
 
 export type UpdateMessageReq = z.infer<typeof updateMessageSchema>;
+
+export const createChatReportSchema = z
+  .object({
+    reportedUserId: z.string().uuid(),
+    category: z.enum(CHAT_REPORT_CATEGORIES).nullish(),
+    details: z.string().trim().max(1000).nullish(),
+  })
+  .superRefine((value, context) => {
+    if (!value.category && !value.details) {
+      context.addIssue({
+        code: "custom",
+        message: "REPORT_REASON_REQUIRED",
+        path: ["details"],
+      });
+    }
+  });
+
+export type CreateChatReportReq = z.infer<typeof createChatReportSchema>;

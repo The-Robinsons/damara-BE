@@ -10,7 +10,11 @@ import {
   CreateChatRoomReq,
   createMessageSchema,
   CreateMessageReq,
+  createChatReportSchema,
+  CreateChatReportReq,
 } from "../routes/common/validation/chat-schemas";
+import { getRequestUserId } from "../common/util/request-user";
+import { ChatReportService } from "../services/ChatReportService";
 
 /**
  * 채팅방 생성
@@ -281,6 +285,35 @@ export async function getChatRoomsByUserId(
     );
 
     res.status(HttpStatusCodes.OK).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * 채팅 사용자 신고
+ * POST /api/chat/rooms/:chatRoomId/reports
+ */
+export async function createChatReport(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const reporterId = getRequestUserId(req);
+    const report = parseReq<CreateChatReportReq>(createChatReportSchema)(
+      req.body
+    );
+    const result = await ChatReportService.createReport({
+      chatRoomId: req.params.chatRoomId,
+      reporterId,
+      reportedUserId: report.reportedUserId,
+      category: report.category,
+      details: report.details,
+      requestIp: req.ip || req.socket.remoteAddress || "unknown",
+    });
+
+    res.status(HttpStatusCodes.ACCEPTED).json(result);
   } catch (error) {
     next(error);
   }

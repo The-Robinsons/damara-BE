@@ -7,6 +7,7 @@ import { NOTICE_TYPES } from "../types/notice";
 import { FAQ_CATEGORIES } from "../types/faq";
 import { NOTIFICATION_TYPES } from "../types/notification";
 import { MESSAGE_TYPES } from "../types/chat";
+import { CHAT_REPORT_CATEGORIES } from "../types/chat-report";
 import {
   POST_EXCEPTION_STATUSES,
   POST_EXCEPTION_TYPES,
@@ -104,6 +105,33 @@ const options: swaggerJsdoc.Options = {
     ],
     components: {
       schemas: {
+        CreateChatReportRequest: {
+          type: "object",
+          required: ["reportedUserId"],
+          properties: {
+            reportedUserId: { type: "string", format: "uuid" },
+            category: {
+              type: "string",
+              nullable: true,
+              enum: [...CHAT_REPORT_CATEGORIES],
+              description: "선택 사항. details와 동시에 비어 있을 수 없습니다.",
+            },
+            details: {
+              type: "string",
+              nullable: true,
+              maxLength: 1000,
+              description: "선택 사항. category와 동시에 비어 있을 수 없습니다.",
+            },
+          },
+        },
+        CreateChatReportResponse: {
+          type: "object",
+          required: ["message", "reportId"],
+          properties: {
+            message: { type: "string", example: "CHAT_REPORT_ACCEPTED" },
+            reportId: { type: "string", format: "uuid" },
+          },
+        },
         TradeReviewRequest: {
           type: "object",
           required: ["revieweeId", "rating"],

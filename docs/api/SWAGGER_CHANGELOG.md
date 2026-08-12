@@ -2452,3 +2452,18 @@ npm run build
 npm run openapi:generate
 npm run openapi:lint
 ```
+# 2026-08-13 채팅 사용자 신고 API 추가
+
+## 추가 API
+
+- `POST /api/chat/rooms/{chatRoomId}/reports`
+- `x-user-id` 헤더에서 신고자 UUID를 읽는다.
+- 요청은 `reportedUserId`와 선택 항목인 `category`, `details`를 받는다.
+- `category`와 `details` 중 하나 이상을 입력해야 한다.
+- 성공 시 `202 Accepted`, `CHAT_REPORT_ACCEPTED`, `reportId`를 반환한다.
+- 채팅 참여 관계, 자기 신고, 횟수 제한, 메일 전송 오류 응답을 추가했다.
+
+## 추가 스키마
+
+- `CreateChatReportRequest`
+- `CreateChatReportResponse`

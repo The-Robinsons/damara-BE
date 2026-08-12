@@ -12,6 +12,7 @@ import {
   deleteChatRoom,
   deleteMessage,
   getChatRoomsByUserId,
+  createChatReport,
 } from "../../controllers/chat.controller";
 
 const chatRouter = Router();
@@ -249,6 +250,54 @@ chatRouter.get("/rooms/post/:postId", getOrCreateChatRoomByPostId);
 // GET /api/chat/rooms/:chatRoomId/messages - 채팅방의 메시지 목록 조회
 // 중요: 더 구체적인 라우트를 먼저 배치해야 함
 chatRouter.get("/rooms/:chatRoomId/messages", getMessagesByChatRoomId);
+
+/**
+ * @swagger
+ * /api/chat/rooms/{chatRoomId}/reports:
+ *   post:
+ *     summary: 채팅 사용자 신고 접수
+ *     tags: [Chat]
+ *     parameters:
+ *       - in: path
+ *         name: chatRoomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: header
+ *         name: x-user-id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: 신고자 사용자 UUID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateChatReportRequest'
+ *     responses:
+ *       202:
+ *         description: 신고 이메일 전송 완료
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateChatReportResponse'
+ *       400:
+ *         description: 신고 사유 누락 또는 자기 신고
+ *       401:
+ *         description: 인증 정보 누락
+ *       403:
+ *         description: 채팅 참여자가 아님
+ *       404:
+ *         description: 채팅방 또는 사용자를 찾을 수 없음
+ *       429:
+ *         description: 신고 횟수 제한
+ *       502:
+ *         description: 신고 이메일 전송 실패
+ */
+chatRouter.post("/rooms/:chatRoomId/reports", createChatReport);
 
 /**
  * @swagger

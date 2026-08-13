@@ -517,6 +517,8 @@
           },
           "nickname": {
             "type": "string",
+            "minLength": 2,
+            "maxLength": 20,
             "description": "닉네임",
             "example": "홍길동"
           },
@@ -2122,6 +2124,8 @@
           },
           "nickname": {
             "type": "string",
+            "minLength": 2,
+            "maxLength": 20,
             "description": "닉네임",
             "example": "다마라 공식"
           },
@@ -7208,8 +7212,9 @@
                       "nickname": {
                         "type": "string",
                         "minLength": 2,
+                        "maxLength": 20,
                         "example": "홍길동",
-                        "description": "닉네임 (2자 이상)"
+                        "description": "닉네임 (2자 이상 20자 이하)"
                       },
                       "studentId": {
                         "type": "string",
@@ -8103,7 +8108,8 @@
                       },
                       "nickname": {
                         "type": "string",
-                        "minLength": 2
+                        "minLength": 2,
+                        "maxLength": 20
                       },
                       "studentId": {
                         "type": "string"

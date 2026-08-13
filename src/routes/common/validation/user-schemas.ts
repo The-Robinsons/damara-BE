@@ -2,13 +2,14 @@ import z from "zod";
 import { mjuEmailSchema } from "../../../common/validation/mju-email";
 
 const passwordSchema = z.string().min(8).max(20);
+const nicknameSchema = z.string().min(2).max(20);
 
 // 유저 생성 요청 스키마 정의
 export const createUserSchema = z.object({
   user: z.object({
     email: mjuEmailSchema,
     passwordHash: passwordSchema,
-    nickname: z.string().min(2),
+    nickname: nicknameSchema,
     department: z.string().optional(),
     studentId: z.string().min(1), // 학번 필수
     avatarUrl: z.string().optional(),
@@ -28,7 +29,7 @@ export const updateUserSchema = z.object({
   user: z.object({
     email: z.email().optional(),
     passwordHash: passwordSchema.optional(),
-    nickname: z.string().min(2).optional(),
+    nickname: nicknameSchema.optional(),
     department: z.string().optional(),
     studentId: z.string().optional(),
     avatarUrl: z.string().optional(),

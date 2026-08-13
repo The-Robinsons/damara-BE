@@ -74,12 +74,12 @@ describe("post schemas", () => {
       post: {
         ...postWithoutPickupLocation,
         pickupType: "damara_zone",
-        pickupZoneId: "s2810",
+        pickupZoneId: "student-hall-8f-stairs",
       },
     });
 
     expect(parsed.post.pickupType).toBe("damara_zone");
-    expect(parsed.post.pickupZoneId).toBe("s2810");
+    expect(parsed.post.pickupZoneId).toBe("student-hall-8f-stairs");
     expect(parsed.post.pickupLocation).toBeUndefined();
   });
 

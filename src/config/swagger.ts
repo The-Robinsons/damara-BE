@@ -1104,7 +1104,7 @@ const options: swaggerJsdoc.Options = {
             id: {
               type: "string",
               description: "다마라존 ID. 게시글 등록 시 pickupZoneId로 전달합니다.",
-              example: "s2810",
+              example: "student-hall-8f-stairs",
             },
             name: {
               type: "string",
@@ -1241,7 +1241,7 @@ const options: swaggerJsdoc.Options = {
               type: "string",
               nullable: true,
               description: "다마라존 ID. pickupType=damara_zone일 때 사용합니다.",
-              example: "s2810",
+              example: "student-hall-8f-stairs",
             },
             pickupZone: {
               allOf: [{ $ref: "#/components/schemas/PickupZone" }],
@@ -1554,7 +1554,7 @@ const options: swaggerJsdoc.Options = {
                 pickupZoneId: {
                   type: "string",
                   nullable: true,
-                  example: "s2810",
+                  example: "student-hall-8f-stairs",
                 },
                 pickupZone: {
                   allOf: [{ $ref: "#/components/schemas/PickupZone" }],

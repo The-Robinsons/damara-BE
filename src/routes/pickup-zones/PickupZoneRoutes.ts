@@ -63,7 +63,7 @@ pickupZoneRouter.get("/", getPickupZones);
  *         schema:
  *           type: string
  *         description: 다마라존 ID
- *         example: s2810
+ *         example: student-hall-8f-stairs
  *     responses:
  *       200:
  *         description: 다마라존 상세 조회 성공

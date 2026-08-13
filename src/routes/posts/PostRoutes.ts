@@ -321,7 +321,7 @@ postRouter.get("/student/:studentId", getPostsByStudentId);
  *                   pickupLocation:
  *                     type: string
  *                     nullable: true
- *                     maxLength: 200
+ *                     maxLength: 50
  *                     example: "명지대학교 정문"
  *                     description: "직접 입력 장소. pickupType=custom일 때 필요하며 damara_zone이면 서버가 다마라존 표시명으로 채움"
  *                   pickupDate:

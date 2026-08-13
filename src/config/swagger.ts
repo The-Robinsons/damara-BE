@@ -1251,6 +1251,7 @@ const options: swaggerJsdoc.Options = {
             pickupLocation: {
               type: "string",
               nullable: true,
+              maxLength: 50,
               description: "픽업 장소",
               example: "자연캠퍼스 S2810",
             },
@@ -2567,6 +2568,7 @@ const options: swaggerJsdoc.Options = {
             pickupLocation: {
               type: "string",
               nullable: true,
+              maxLength: 50,
               description: "픽업 장소",
               example: "인문캠퍼스 학생회관 3층 카페앞",
             },

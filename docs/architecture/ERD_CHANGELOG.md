@@ -135,6 +135,21 @@ Swagger 변경 사항은 다음 문서에서 관리한다.
 docs/api/SWAGGER_CHANGELOG.md
 ```
 
+## 2026-08-13 - 게시글 수령 장소 길이 제한 축소
+
+- 브랜치: `feat/pickup-location-50-char-limit`
+- `posts.pickup_location`을 `VARCHAR(200)`에서 `VARCHAR(50)`으로 변경했다.
+- 관계 및 API 응답 구조 변경은 없다.
+- 배포 전 아래 쿼리로 50자 초과 데이터를 확인해야 한다.
+
+```sql
+SELECT id, CHAR_LENGTH(pickup_location)
+FROM posts
+WHERE CHAR_LENGTH(pickup_location) > 50;
+```
+
+초과 데이터가 있으면 먼저 정리한 뒤 스키마 동기화를 실행해야 컬럼 축소 실패를 피할 수 있다.
+
 ### 배포 주의점
 
 서버 시작 시 `posts` 테이블의 신규 컬럼을 확인하고 누락 시 추가한다.

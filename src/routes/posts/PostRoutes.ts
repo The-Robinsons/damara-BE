@@ -137,7 +137,7 @@ postRouter.post("/:id/reviews", createTradeReview);
  *         name: status
  *         schema:
  *           type: string
- *           enum: [open, closed, in_progress, completed, cancelled]
+ *           enum: [open, closed, completed, cancelled]
  *         description: 게시글 상태 필터. 홈 화면 모집중 목록은 open을 사용합니다.
  *         example: open
  *       - in: query
@@ -463,7 +463,7 @@ postRouter.post("/", createPost);
  *                     type: integer
  *                   status:
  *                     type: string
- *                     enum: [open, closed, in_progress, completed, cancelled]
+ *                     enum: [open, closed, completed, cancelled]
  *                   deadline:
  *                     type: string
  *                     format: date-time
@@ -571,7 +571,7 @@ postRouter.put("/:id", updatePost);
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [open, closed, in_progress, completed, cancelled]
+ *                 enum: [open, closed, completed, cancelled]
  *                 description: 변경할 상태
  *                 example: "closed"
  *           example:

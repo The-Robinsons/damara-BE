@@ -1220,8 +1220,8 @@ const options: swaggerJsdoc.Options = {
             },
             status: {
               type: "string",
-              enum: ["open", "closed", "in_progress", "completed", "cancelled"],
-              description: "상품 상태 (open: 모집중, closed: 모집완료, in_progress: 진행중, completed: 거래완료, cancelled: 취소됨)",
+              enum: ["open", "closed", "completed", "cancelled"],
+              description: "상품 상태 (open: 모집중, closed: 모집마감, completed: 거래완료, cancelled: 취소됨)",
               example: "open",
             },
             deadline: {
@@ -1540,7 +1540,6 @@ const options: swaggerJsdoc.Options = {
                   enum: [
                     "open",
                     "closed",
-                    "in_progress",
                     "completed",
                     "cancelled",
                   ],
@@ -1925,6 +1924,34 @@ const options: swaggerJsdoc.Options = {
             participantStatus: {
               $ref: "#/components/schemas/ParticipantStatus",
             },
+            participantStatusLabel: {
+              type: "string",
+              example: "참여 확정",
+            },
+            participantStatusStep: {
+              type: "integer",
+              minimum: 1,
+              maximum: 4,
+              example: 2,
+            },
+            participantStatusTotalSteps: {
+              type: "integer",
+              example: 4,
+            },
+            nextStatus: {
+              allOf: [{ $ref: "#/components/schemas/ParticipantStatus" }],
+              nullable: true,
+            },
+            nextActionLabel: {
+              type: "string",
+              nullable: true,
+              example: "입금 확인하기",
+            },
+            nextActionActor: {
+              type: "string",
+              enum: ["organizer", "participant"],
+              nullable: true,
+            },
             joinedAt: {
               type: "string",
               format: "date-time",
@@ -2013,7 +2040,32 @@ const options: swaggerJsdoc.Options = {
             participantStatusLabel: {
               type: "string",
               description: "참여자 상태 한글 라벨",
-              example: "참여중",
+              example: "참여 확정",
+            },
+            participantStatusStep: {
+              type: "integer",
+              minimum: 1,
+              maximum: 4,
+              example: 2,
+            },
+            participantStatusTotalSteps: {
+              type: "integer",
+              example: 4,
+            },
+            nextStatus: {
+              allOf: [{ $ref: "#/components/schemas/ParticipantStatus" }],
+              nullable: true,
+            },
+            nextActionLabel: {
+              type: "string",
+              nullable: true,
+              example: "입금 확인하기",
+            },
+            nextActionActor: {
+              type: "string",
+              enum: ["organizer", "participant"],
+              nullable: true,
+              example: "organizer",
             },
             user: {
               type: "object",
@@ -2143,7 +2195,6 @@ const options: swaggerJsdoc.Options = {
                   enum: [
                     "open",
                     "closed",
-                    "in_progress",
                     "completed",
                     "cancelled",
                   ],
@@ -2213,7 +2264,33 @@ const options: swaggerJsdoc.Options = {
                   type: "string",
                   nullable: true,
                   description: "참여 상태 한글 라벨",
-                  example: "입금대기",
+                  example: "참여 확정",
+                },
+                participantStatusStep: {
+                  type: "integer",
+                  nullable: true,
+                  minimum: 1,
+                  maximum: 4,
+                  example: 2,
+                },
+                participantStatusTotalSteps: {
+                  type: "integer",
+                  nullable: true,
+                  example: 4,
+                },
+                nextStatus: {
+                  allOf: [{ $ref: "#/components/schemas/ParticipantStatus" }],
+                  nullable: true,
+                },
+                nextActionLabel: {
+                  type: "string",
+                  nullable: true,
+                  example: "입금 확인하기",
+                },
+                nextActionActor: {
+                  type: "string",
+                  enum: ["organizer", "participant"],
+                  nullable: true,
                 },
                 participatedAt: {
                   type: "string",
@@ -2459,7 +2536,7 @@ const options: swaggerJsdoc.Options = {
             },
             status: {
               type: "string",
-              enum: ["open", "closed", "in_progress", "completed", "cancelled"],
+              enum: ["open", "closed", "completed", "cancelled"],
               description: "상품 상태",
               example: "open",
             },
@@ -2674,6 +2751,26 @@ const options: swaggerJsdoc.Options = {
               description: "전체 참여자 수",
               example: 2,
             },
+            participantProcessGuide: {
+              type: "object",
+              description: "모집글 상세에서 표시할 참여자별 거래 단계 안내",
+              properties: {
+                title: { type: "string", example: "거래는 이렇게 진행돼요" },
+                totalSteps: { type: "integer", example: 4 },
+                steps: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      status: { $ref: "#/components/schemas/ParticipantStatus" },
+                      step: { type: "integer", minimum: 1, maximum: 4 },
+                      label: { type: "string", example: "참여 확정" },
+                      description: { type: "string" },
+                    },
+                  },
+                },
+              },
+            },
             exceptionSummary: {
               $ref: "#/components/schemas/PostExceptionSummary",
             },
@@ -2749,7 +2846,6 @@ const options: swaggerJsdoc.Options = {
                   enum: [
                     "open",
                     "closed",
-                    "in_progress",
                     "completed",
                     "cancelled",
                   ],

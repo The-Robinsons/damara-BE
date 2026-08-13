@@ -3,6 +3,7 @@ import {
   createPostSchema,
   updatePostSchema,
 } from "../../src/routes/common/validation/post-schemas";
+import { updatePostStatusSchema } from "../../src/routes/common/validation/post-status-schemas";
 
 const basePost = {
   authorId: "123e4567-e89b-12d3-a456-426614174000",
@@ -91,5 +92,16 @@ describe("post schemas", () => {
     });
 
     expect(result.success).toBe(false);
+  });
+  it("rejects the removed in_progress post status", () => {
+    expect(
+      updatePostStatusSchema.safeParse({ status: "in_progress" }).success
+    ).toBe(false);
+    expect(updatePostStatusSchema.safeParse({ status: "closed" }).success).toBe(
+      true
+    );
+    expect(
+      updatePostStatusSchema.safeParse({ status: "completed" }).success
+    ).toBe(true);
   });
 });

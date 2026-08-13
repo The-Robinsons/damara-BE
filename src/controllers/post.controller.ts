@@ -38,7 +38,6 @@ const POST_LIST_SORTS: PostListSort[] = ["latest", "deadline", "popular"];
 const POST_LIST_STATUSES: PostListStatus[] = [
   "open",
   "closed",
-  "in_progress",
   "completed",
   "cancelled",
 ];
@@ -177,7 +176,7 @@ export async function getAllPosts(
         res,
         HttpStatusCodes.BAD_REQUEST,
         "INVALID_STATUS",
-        "status는 open, closed, in_progress, completed, cancelled 중 하나여야 합니다."
+        "status는 open, closed, completed, cancelled 중 하나여야 합니다."
       );
     }
 

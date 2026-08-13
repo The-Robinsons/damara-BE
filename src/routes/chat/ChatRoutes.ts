@@ -109,7 +109,7 @@ chatRouter.post("/rooms", createChatRoom);
  *                             type: string
  *                           status:
  *                             type: string
- *                             enum: [open, closed, in_progress, completed, cancelled]
+ *                             enum: [open, closed, completed, cancelled]
  *                           pickupLocation:
  *                             type: string
  *                             nullable: true

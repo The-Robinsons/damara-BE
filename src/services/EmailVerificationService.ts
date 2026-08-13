@@ -8,7 +8,10 @@ import HttpStatusCodes from "../common/constants/HttpStatusCodes";
 import ENV from "../common/constants/ENV";
 import { emailSender, EmailSender } from "../common/mail/EmailSender";
 import { renderSignupVerificationEmail } from "../common/mail/templates/signup-verification";
-import { RouteError } from "../common/util/route-errors";
+import {
+  EmailAlreadyExistsError,
+  RouteError,
+} from "../common/util/route-errors";
 import { sequelize } from "../db";
 import { EmailVerificationRepo } from "../repos/EmailVerificationRepo";
 import { UserRepo } from "../repos/UserRepo";
@@ -71,11 +74,7 @@ export const EmailVerificationService = {
 
     const existingUser = await UserRepo.findByEmail(email);
     if (existingUser) {
-      return {
-        message: "VERIFICATION_EMAIL_SENT",
-        expiresInSeconds: ENV.EmailVerificationCodeTtlSeconds,
-        resendAfterSeconds: ENV.EmailVerificationResendSeconds,
-      };
+      throw new EmailAlreadyExistsError();
     }
 
     const [lastCreatedAt, emailCount, ipCount] = await Promise.all([

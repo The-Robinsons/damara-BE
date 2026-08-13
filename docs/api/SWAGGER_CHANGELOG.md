@@ -2497,3 +2497,11 @@ npm run openapi:lint
 - 각 비밀번호 입력 스키마에 `minLength: 8`, `maxLength: 20`을 명시했다.
 - DB에는 bcrypt 해시가 저장되므로 컬럼 구조 변경은 없다.
 - 기존 비밀번호가 20자를 초과하는 사용자는 로그인 요청 검증에서 거절될 수 있으므로 배포 전 사용자 영향을 확인해야 한다.
+
+## 2026-08-13 - 이메일 인증 발송 중복 응답 추가
+
+- 브랜치: `feat/email-verification-duplicate-response`
+- `POST /api/auth/email-verifications/send`에서 이미 가입된 이메일이면 `409 Conflict`를 반환한다.
+- 오류 응답은 `error`와 `message`에 `EMAIL_ALREADY_EXISTS`, `details`에 빈 객체를 담는다.
+- 중복 이메일인 경우 인증번호 생성, 인증 데이터 저장·변경, 이메일 발송을 수행하지 않는다.
+- 프론트엔드는 HTTP 409와 `error=EMAIL_ALREADY_EXISTS`를 기준으로 중복 이메일 안내를 표시할 수 있다.

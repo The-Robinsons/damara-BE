@@ -182,6 +182,37 @@ describe("EmailVerificationService", () => {
     }
   );
 
+  it("이미 가입된 이메일이면 409 오류를 반환하고 인증메일을 보내지 않는다", async () => {
+    vi.spyOn(UserRepo, "findByEmail").mockResolvedValue({ id: "user-id" } as never);
+    const findLatestCreatedAt = vi.spyOn(
+      EmailVerificationRepo,
+      "findLatestCreatedAt"
+    );
+    const invalidateActive = vi.spyOn(
+      EmailVerificationRepo,
+      "invalidateActive"
+    );
+    const create = vi.spyOn(EmailVerificationRepo, "create");
+    const send = vi.fn();
+
+    await expect(
+      EmailVerificationService.sendVerification(
+        " Existing@MJU.AC.KR ",
+        "127.0.0.1",
+        { send }
+      )
+    ).rejects.toMatchObject({
+      status: 409,
+      error: "EMAIL_ALREADY_EXISTS",
+      message: "EMAIL_ALREADY_EXISTS",
+    });
+
+    expect(findLatestCreatedAt).not.toHaveBeenCalled();
+    expect(invalidateActive).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it("인증 토큰의 이메일과 회원가입 이메일이 다르면 토큰을 소비하지 않는다", async () => {
     const transaction = {} as import("sequelize").Transaction;
     vi.spyOn(sequelize, "transaction").mockImplementation(

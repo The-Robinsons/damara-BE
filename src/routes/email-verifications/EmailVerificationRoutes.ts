@@ -38,6 +38,16 @@ const emailVerificationRouter = Router();
  *                 issues:
  *                   - path: [email]
  *                     message: 명지대학교 이메일(@mju.ac.kr)만 사용할 수 있습니다.
+ *       409:
+ *         description: 이미 가입된 이메일 (EMAIL_ALREADY_EXISTS). 인증번호를 생성하거나 이메일을 발송하지 않음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               error: EMAIL_ALREADY_EXISTS
+ *               message: EMAIL_ALREADY_EXISTS
+ *               details: {}
  *       429:
  *         description: 발송 횟수 제한
  *       502:

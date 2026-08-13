@@ -93,6 +93,25 @@ describe("post schemas", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("수령 장소는 생성과 수정 요청에서 50자까지만 허용한다", () => {
+    expect(
+      createPostSchema.safeParse({
+        post: { ...basePost, pickupLocation: "가".repeat(50) },
+      }).success
+    ).toBe(true);
+    expect(
+      createPostSchema.safeParse({
+        post: { ...basePost, pickupLocation: "가".repeat(51) },
+      }).success
+    ).toBe(false);
+    expect(
+      updatePostSchema.safeParse({
+        post: { pickupLocation: "가".repeat(51) },
+      }).success
+    ).toBe(false);
+  });
+
   it("rejects the removed in_progress post status", () => {
     expect(
       updatePostStatusSchema.safeParse({ status: "in_progress" }).success

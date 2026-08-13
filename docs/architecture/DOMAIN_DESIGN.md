@@ -46,7 +46,7 @@ CREATE TABLE posts (
   current_quantity INT NOT NULL DEFAULT 0,
   status ENUM('open', 'closed', 'cancelled') NOT NULL DEFAULT 'open',
   deadline DATETIME NOT NULL,
-  pickup_location VARCHAR(200),
+  pickup_location VARCHAR(50),
   category VARCHAR(50) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

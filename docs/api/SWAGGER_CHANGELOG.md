@@ -2482,3 +2482,10 @@ npm run openapi:lint
 
 - `CreateChatReportRequest`
 - `CreateChatReportResponse`
+
+## 2026-08-13 - 수령 장소 길이 제한 축소
+
+- 브랜치: `feat/pickup-location-50-char-limit`
+- 게시글 생성·수정 요청의 `pickupLocation.maxLength`를 200에서 50으로 변경했다.
+- 51자 이상의 수령 장소는 요청 검증 단계에서 거절된다.
+- 프론트엔드는 수령 장소 입력값을 50자 이내로 제한해야 한다.

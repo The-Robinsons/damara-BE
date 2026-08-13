@@ -36,7 +36,7 @@ export const createPostSchema = z.object({
     }), // ISO 8601 형식 검증
     pickupType: pickupTypeSchema.optional().nullable(),
     pickupZoneId: z.string().trim().min(1).max(100).optional().nullable(),
-    pickupLocation: z.string().max(200).optional().nullable(),
+    pickupLocation: z.string().max(50).optional().nullable(),
     pickupDate: dateOnlySchema.optional().nullable(),
     pickupStartTime: timeSchema.optional().nullable(),
     pickupEndTime: timeSchema.optional().nullable(),
@@ -76,7 +76,7 @@ export const updatePostSchema = z.object({
       .optional(),
     pickupType: pickupTypeSchema.optional().nullable(),
     pickupZoneId: z.string().trim().min(1).max(100).optional().nullable(),
-    pickupLocation: z.string().max(200).optional().nullable(),
+    pickupLocation: z.string().max(50).optional().nullable(),
     pickupDate: dateOnlySchema.optional().nullable(),
     pickupStartTime: timeSchema.optional().nullable(),
     pickupEndTime: timeSchema.optional().nullable(),

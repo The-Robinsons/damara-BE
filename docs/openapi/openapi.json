@@ -1439,6 +1439,7 @@
           "pickupLocation": {
             "type": "string",
             "nullable": true,
+            "maxLength": 50,
             "description": "픽업 장소",
             "example": "자연캠퍼스 S2810"
           },
@@ -2903,6 +2904,7 @@
           "pickupLocation": {
             "type": "string",
             "nullable": true,
+            "maxLength": 50,
             "description": "픽업 장소",
             "example": "인문캠퍼스 학생회관 3층 카페앞"
           },
@@ -5274,7 +5276,7 @@
                       "pickupLocation": {
                         "type": "string",
                         "nullable": true,
-                        "maxLength": 200,
+                        "maxLength": 50,
                         "example": "명지대학교 정문",
                         "description": "직접 입력 장소. pickupType=custom일 때 필요하며 damara_zone이면 서버가 다마라존 표시명으로 채움"
                       },

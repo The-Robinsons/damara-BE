@@ -1,11 +1,13 @@
 import z from "zod";
 import { mjuEmailSchema } from "../../../common/validation/mju-email";
 
+const passwordSchema = z.string().min(8).max(20);
+
 // 유저 생성 요청 스키마 정의
 export const createUserSchema = z.object({
   user: z.object({
     email: mjuEmailSchema,
-    passwordHash: z.string().min(8), //비밀번호는 8자 이상
+    passwordHash: passwordSchema,
     nickname: z.string().min(2),
     department: z.string().optional(),
     studentId: z.string().min(1), // 학번 필수
@@ -25,7 +27,7 @@ export type CreateUserReq = z.infer<typeof createUserSchema>;
 export const updateUserSchema = z.object({
   user: z.object({
     email: z.email().optional(),
-    passwordHash: z.string().min(8).optional(),
+    passwordHash: passwordSchema.optional(),
     nickname: z.string().min(2).optional(),
     department: z.string().optional(),
     studentId: z.string().optional(),
@@ -46,7 +48,7 @@ export type UpdateProfileImageReq = z.infer<typeof updateProfileImageSchema>;
  */
 export const loginSchema = z.object({
   studentId: z.string().min(1),
-  password: z.string().min(8),
+  password: passwordSchema,
 });
 
 export type LoginReq = z.infer<typeof loginSchema>;

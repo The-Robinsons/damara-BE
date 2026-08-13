@@ -316,7 +316,7 @@ postRouter.get("/student/:studentId", getPostsByStudentId);
  *                   pickupZoneId:
  *                     type: string
  *                     nullable: true
- *                     example: "s2810"
+ *                     example: "student-hall-8f-stairs"
  *                     description: "다마라존 ID. pickupType=damara_zone일 때 사용"
  *                   pickupLocation:
  *                     type: string
@@ -400,7 +400,7 @@ postRouter.get("/student/:studentId", getPostsByStudentId);
  *               minParticipants: 2
  *               deadline: "2025-11-27T23:59:59.000Z"
  *               pickupType: "damara_zone"
- *               pickupZoneId: "s2810"
+ *               pickupZoneId: "student-hall-8f-stairs"
  *               pickupDate: "2026-06-17"
  *               pickupStartTime: "17:00"
  *               pickupEndTime: "19:00"

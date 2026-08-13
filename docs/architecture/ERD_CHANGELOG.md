@@ -135,6 +135,21 @@ Swagger 변경 사항은 다음 문서에서 관리한다.
 docs/api/SWAGGER_CHANGELOG.md
 ```
 
+## 2026-08-13 - 사용자 닉네임 길이 제한 축소
+
+- 브랜치: `feat/nickname-20-char-limit`
+- `users.nickname`을 `VARCHAR(50)`에서 `VARCHAR(20)`으로 변경했다.
+- 관계 및 고유 제약 변경은 없다.
+- 배포 전 아래 쿼리로 20자 초과 데이터를 확인해야 한다.
+
+```sql
+SELECT id, CHAR_LENGTH(nickname)
+FROM users
+WHERE CHAR_LENGTH(nickname) > 20;
+```
+
+초과 데이터가 있으면 먼저 정리한 뒤 스키마 동기화를 실행해야 컬럼 축소 실패를 피할 수 있다.
+
 ## 2026-08-13 - 게시글 수령 장소 길이 제한 축소
 
 - 브랜치: `feat/pickup-location-50-char-limit`

@@ -150,8 +150,9 @@ userRouter.get("/", getAllUsers);
  *                   nickname:
  *                     type: string
  *                     minLength: 2
+ *                     maxLength: 20
  *                     example: "홍길동"
- *                     description: 닉네임 (2자 이상)
+ *                     description: 닉네임 (2자 이상 20자 이하)
  *                   studentId:
  *                     type: string
  *                     example: "20241234"
@@ -787,6 +788,7 @@ userRouter.get("/:id", getUserById);
  *                   nickname:
  *                     type: string
  *                     minLength: 2
+ *                     maxLength: 20
  *                   studentId:
  *                     type: string
  *                   department:

@@ -78,7 +78,7 @@ UserModel.init(
     },
 
     nickname: {
-      type: DataTypes.STRING(50),
+      type: DataTypes.STRING(20),
       allowNull: false,
     },
 

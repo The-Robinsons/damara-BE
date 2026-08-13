@@ -80,3 +80,31 @@ describe("user password length validation", () => {
     ).toBe(false);
   });
 });
+
+describe("user nickname length validation", () => {
+  it("회원가입 닉네임은 2자 이상 20자 이하만 허용한다", () => {
+    expect(
+      createUserSchema.safeParse({
+        user: { ...validRequest.user, nickname: "가".repeat(2) },
+      }).success
+    ).toBe(true);
+    expect(
+      createUserSchema.safeParse({
+        user: { ...validRequest.user, nickname: "가".repeat(20) },
+      }).success
+    ).toBe(true);
+    expect(
+      createUserSchema.safeParse({
+        user: { ...validRequest.user, nickname: "가".repeat(21) },
+      }).success
+    ).toBe(false);
+  });
+
+  it("사용자 수정에서도 20자를 초과하는 닉네임을 거부한다", () => {
+    expect(
+      updateUserSchema.safeParse({
+        user: { nickname: "가".repeat(21) },
+      }).success
+    ).toBe(false);
+  });
+});

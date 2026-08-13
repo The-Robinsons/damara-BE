@@ -374,6 +374,8 @@ const options: swaggerJsdoc.Options = {
             },
             nickname: {
               type: "string",
+              minLength: 2,
+              maxLength: 20,
               description: "닉네임",
               example: "홍길동",
             },
@@ -1875,6 +1877,8 @@ const options: swaggerJsdoc.Options = {
             },
             nickname: {
               type: "string",
+              minLength: 2,
+              maxLength: 20,
               description: "닉네임",
               example: "다마라 공식",
             },

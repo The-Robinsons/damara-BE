@@ -2505,3 +2505,10 @@ npm run openapi:lint
 - 오류 응답은 `error`와 `message`에 `EMAIL_ALREADY_EXISTS`, `details`에 빈 객체를 담는다.
 - 중복 이메일인 경우 인증번호 생성, 인증 데이터 저장·변경, 이메일 발송을 수행하지 않는다.
 - 프론트엔드는 HTTP 409와 `error=EMAIL_ALREADY_EXISTS`를 기준으로 중복 이메일 안내를 표시할 수 있다.
+
+## 2026-08-13 - 닉네임 길이 제한 축소
+
+- 브랜치: `feat/nickname-20-char-limit`
+- 회원가입·사용자 수정 요청의 `nickname`을 2자 이상 20자 이하로 제한했다.
+- Swagger 요청 및 사용자 응답 스키마에 `minLength: 2`, `maxLength: 20`을 명시했다.
+- 21자 이상의 닉네임은 요청 검증 단계에서 거절된다.

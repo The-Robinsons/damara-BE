@@ -143,9 +143,10 @@ userRouter.get("/", getAllUsers);
  *                   passwordHash:
  *                     type: string
  *                     minLength: 8
+ *                     maxLength: 20
  *                     format: password
  *                     example: "mypassword123"
- *                     description: 비밀번호 (8자 이상, 평문으로 전송하면 서버에서 해시화)
+ *                     description: 비밀번호 (8자 이상 20자 이하, 평문으로 전송하면 서버에서 해시화)
  *                   nickname:
  *                     type: string
  *                     minLength: 2
@@ -221,6 +222,8 @@ userRouter.post("/", createUser);
  *                 description: 학번
  *               password:
  *                 type: string
+ *                 minLength: 8
+ *                 maxLength: 20
  *                 format: password
  *     responses:
  *       200:
@@ -779,6 +782,7 @@ userRouter.get("/:id", getUserById);
  *                   passwordHash:
  *                     type: string
  *                     minLength: 8
+ *                     maxLength: 20
  *                     format: password
  *                   nickname:
  *                     type: string

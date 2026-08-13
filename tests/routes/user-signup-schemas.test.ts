@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createUserSchema } from "../../src/routes/common/validation/user-schemas";
+import {
+  createUserSchema,
+  loginSchema,
+  updateUserSchema,
+} from "../../src/routes/common/validation/user-schemas";
 
 const validRequest = {
   user: {
@@ -38,6 +42,40 @@ describe("createUserSchema email verification", () => {
           ...validRequest.user,
           email,
         },
+      }).success
+    ).toBe(false);
+  });
+});
+
+describe("user password length validation", () => {
+  it("회원가입 비밀번호는 8자 이상 20자 이하만 허용한다", () => {
+    expect(
+      createUserSchema.safeParse({
+        user: { ...validRequest.user, passwordHash: "a".repeat(8) },
+      }).success
+    ).toBe(true);
+    expect(
+      createUserSchema.safeParse({
+        user: { ...validRequest.user, passwordHash: "a".repeat(20) },
+      }).success
+    ).toBe(true);
+    expect(
+      createUserSchema.safeParse({
+        user: { ...validRequest.user, passwordHash: "a".repeat(21) },
+      }).success
+    ).toBe(false);
+  });
+
+  it("로그인과 사용자 수정에서도 20자를 초과하는 비밀번호를 거부한다", () => {
+    expect(
+      loginSchema.safeParse({
+        studentId: "20241234",
+        password: "a".repeat(21),
+      }).success
+    ).toBe(false);
+    expect(
+      updateUserSchema.safeParse({
+        user: { passwordHash: "a".repeat(21) },
       }).success
     ).toBe(false);
   });

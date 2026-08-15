@@ -5,7 +5,7 @@
     "dev": "NODE_ENV=development ts-node --files ./src/server.ts",
     "build": "tsc && npm run copy:assets",
     "copy:assets": "mkdir -p dist/src/public dist/src/views && cp -r src/public/* dist/src/public/ && cp -r src/views/* dist/src/views/",
-    "start": "NODE_ENV=development node dist/src/server.js",
+    "start": "node dist/src/server.js",
     "lint": "eslint .",
     "test": "NODE_ENV=test vitest",
     "type-check": "tsc --noEmit",

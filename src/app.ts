@@ -130,7 +130,8 @@ app.use(express.urlencoded({ extended: true }));
  */
 app.use(
   session({
-    secret: ENV.DbName || "damara-secret", // TODO: 전용 SESSION_SECRET로 분리 추천
+    //secret: ENV.DbName || "damara-secret", // TODO: 전용 SESSION_SECRET로 분리 추천
+    secret: ENV.SessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {

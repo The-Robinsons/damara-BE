@@ -65,6 +65,9 @@ const envSchema = z.object({
     .optional()
     .transform((val) => val === "true"),
 
+
+  SESSION_SECRET: z.string().min(32).optional(),
+
   KAKAO_CLIENT_ID: z.string().min(1, "KAKAO_CLIENT_ID is required"),
   KAKAO_CALLBACK_URL: z.string().url().optional().default("http://localhost:3000/auth/kakao/callback"),
 
@@ -109,6 +112,9 @@ const parsed = envSchema.parse({
   API_BASE_URL: process.env.API_BASE_URL,
   DB_FORCE_SYNC: process.env.DB_FORCE_SYNC,
 
+
+  SESSION_SECRET: process.env.SESSION_SECRET,
+
   KAKAO_CLIENT_ID:
     process.env.KAKAO_CLIENT_ID ?? (isTestEnvironment ? "test" : undefined),
   KAKAO_CALLBACK_URL: process.env.KAKAO_CALLBACK_URL,
@@ -140,6 +146,9 @@ const parsed = envSchema.parse({
 });
 
 if (parsed.NODE_ENV === NodeEnvs.Production) {
+  if (!parsed.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET is required in production");
+  }
   const missingMailConfig = [
     parsed.MAIL_PROVIDER !== "smtp" && "MAIL_PROVIDER=smtp",
     !process.env.MAIL_FROM && "MAIL_FROM",
@@ -169,6 +178,11 @@ const ENV = {
   ApiBaseUrl: parsed.API_BASE_URL || `http://localhost:${parsed.PORT}`,
   ApiBaseUrlConfigured: Boolean(parsed.API_BASE_URL),
   DbForceSync: parsed.DB_FORCE_SYNC ?? false,
+
+
+  SessionSecret:
+    parsed.SESSION_SECRET ??
+    "damara-local-development-session-secret",
 
   KakaoClientId: parsed.KAKAO_CLIENT_ID,
   KakaoCallbackUrl: parsed.KAKAO_CALLBACK_URL,

@@ -24,7 +24,8 @@ import { startTradeReviewPublicationJob } from "./jobs/TradeReviewPublicationJob
  * - 4) Socket.io 서버 초기화
  */
 
-const PORT = process.env.PORT;
+//const PORT = process.env.PORT;
+const PORT = ENV.Port;
 async function startServer() {
   try {
     // 1. DB 연결 여부를 확인하여 장애를 조기에 발견

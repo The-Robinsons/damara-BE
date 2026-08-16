@@ -54,6 +54,16 @@ const app = express();
 app.set("trust proxy", true);
 
 /**
+ * Kubernetes health check
+ * - 애플리케이션 프로세스가 HTTP 요청에 응답할 수 있는지 확인
+ * - DB 상태 확인은 하지 않음
+ */
+app.get("/healthz", (_req, res) => {
+  res.status(200).type("text/plain").send("ok");
+});
+
+/**
+
  * ---------------------------------------------------------------------------
  * 🔥 완전 무적 CORS 설정 (모든 브라우저 허용)
  * ---------------------------------------------------------------------------
@@ -120,7 +130,8 @@ app.use(express.urlencoded({ extended: true }));
  */
 app.use(
   session({
-    secret: ENV.DbName || "damara-secret", // TODO: 전용 SESSION_SECRET로 분리 추천
+    //secret: ENV.DbName || "damara-secret", // TODO: 전용 SESSION_SECRET로 분리 추천
+    secret: ENV.SessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -823,6 +834,11 @@ async function ensurePostExceptionsTable() {
 }
 
 export async function syncDatabase() {
+  if (ENV.NodeEnv === "production") {
+    logger.info("Production 환경 -> 자동 DB 스키마 동기화 생략");
+    return;
+  }
+
   if (!ENV.DbForceSync) {
     logger.info("DB_FORCE_SYNC=false → 기존 데이터 유지");
     // force sync가 false여도 누락된 테이블은 생성하도록 alter 옵션 사용
